@@ -137,6 +137,9 @@ input.date-input{width:140px;max-width:100%;cursor:pointer;min-height:36px;paddi
 .cal-x{display:flex;gap:6px;padding:8px 0 0;border-top:1px solid #eee;margin-top:6px}
 .cal-x button{flex:1;padding:6px 0;border:1px solid #d0d0d0;border-radius:6px;background:#fff;font-size:12px;color:#555}
 .cal-x button.on{border-color:#f5a623;background:#fef6e8;color:#f5a623;font-weight:700}
+
+.eff{display:inline-block;margin-left:8px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;background:#f0f0f0;color:#666;white-space:nowrap}
+.eff.b{background:#fef6e8;color:#e0911a;border:1px solid #f0d8a0}
 @media (max-width:560px){h1{font-size:19px}.card{padding:14px}.choice{min-width:100%}}
 @media print{body{background:#fff;padding:0}body>*:not(#qdoc){display:none!important}#qdoc{display:block!important;position:static!important;left:0!important}}
 </style>
@@ -160,6 +163,12 @@ input.date-input{width:140px;max-width:100%;cursor:pointer;min-height:36px;paddi
   </div>
   <div class="info" id="agree"></div>
   <div class="err" id="schoolErr"></div>
+  <div class="fg"><label>[선택] 연수 할인 코드 입력</label>
+   <div class="row"><input type="text" id="codeIn" class="grow" style="flex:1" placeholder="연수 할인 코드" autocomplete="off" onkeydown="if(event.key==='Enter')applyCode()"><button class="btn" onclick="applyCode()">적용</button></div>
+   <div class="sub" id="codeMsg"></div></div>
+  <div class="fg"><label>[선택] 참여 사업 선택</label>
+   <select id="prog" onchange="onProg()"><option value="">선택 안 함</option><option value="nuri">초록우산 널응원한글 사업</option><option value="umteo">울산교육청 움터 사업</option><option value="custom">직접 입력</option></select>
+   <input type="text" id="progCustom" style="display:none;margin-top:6px" placeholder="참여 사업명을 입력해 주세요" autocomplete="off" oninput="S.progText=this.value"></div>
  </div>
  <div class="card">
   <h2>어떤 견적이 필요하신가요?</h2>
@@ -195,15 +204,6 @@ var REGIONS=['서울','경기','강원','울산','전남광주','경북','경남
 var SCHOOLS=[['서울','서울토도초등학교'],['서울','서울한빛초등학교'],['경기','경기가평초등학교'],['경기','경기수원토도초등학교'],['경기','경기용인푸른초등학교'],
  ['강원','강원춘천초등학교'],['울산','울산태화초등학교'],['울산','울산무거초등학교'],['전남광주','광주빛고을초등학교'],['경북','경북포항초등학교'],
  ['경남','경남창원초등학교'],['전북','전북전주초등학교'],['충북','충북청주초등학교'],['충남','충남천안초등학교'],['제주','제주한라초등학교']];
-var ORGS={ // 기관 코드 → 기관/학급 (사용 인원, 이용 시작·종료일)
- 'GP1234':{name:'경기가평초등학교',classes:[
-  {id:'c1',name:'3학년 1반',subj:{0:{n:25,s:'2026-03-01',e:'2027-02-28'},1:{n:25,s:'2026-03-01',e:'2027-02-28'}}},
-  {id:'c2',name:'3학년 2반',subj:{0:{n:10,s:'2026-03-01',e:'2027-02-28'},1:{n:10,s:'2026-03-01',e:'2027-02-28'}}},
-  {id:'c3',name:'4학년 1반',subj:{0:{n:20,s:'2026-03-01',e:'2027-02-28'}}},
-  {id:'c4',name:'특수학급',subj:{0:{n:5,s:'2025-09-01',e:'2026-08-31'},1:{n:5,s:'2026-03-01',e:'2027-02-28'}}}]},
- 'UL5678':{name:'울산태화초등학교',classes:[
-  {id:'u1',name:'5학년 1반',subj:{0:{n:22,s:'2026-02-01',e:'2027-01-31'},1:{n:22,s:'2026-02-01',e:'2027-01-31'},2:{n:22,s:'2026-04-01',e:'2027-03-31'}}},
-  {id:'u2',name:'5학년 2반',subj:{1:{n:21,s:'2026-02-01',e:'2027-01-31'}}}]}};
 var BUDGET_TIMES=['선택 안 함','9:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
 var LS_Q='todoQuoteTest.quotes',LS_SEQ='todoQuoteTest.seq';
 
@@ -225,15 +225,24 @@ function mask(n){n=String(n).trim();return n?n.charAt(0)+'○'.repeat(Math.max(1
 function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('show')},2200)}
 function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
-function price(pi){return S.region==='울산'?PRODUCTS[pi].ulsan:PRODUCTS[pi].base}
-function priceLabel(pi){var p=PRODUCTS[pi];if(S.region==='울산'&&p.base!==p.ulsan)return '<s style="color:#bbb">월 '+p.base.toLocaleString()+'원</s> <b style="color:#d14">월 '+p.ulsan.toLocaleString()+'원/명</b> <span class="tg o">협약가</span>';return '월 '+p.base.toLocaleString()+'원/명'}
+var PROGS={nuri:{name:'초록우산 널응원한글 사업',prices:{0:12200}},umteo:{name:'울산교육청 움터 사업',prices:{0:12150,1:5800}}};
+var TRAINING_CODES=null; // null = 입력한 코드는 모두 유효(테스트). 유효 코드 목록을 쓰려면 ['ABC123',...] 형태로 지정
+function priceInfo(pi){var base=PRODUCTS[pi].base;var c=[{p:base,src:''}];
+ if(S.region==='울산'&&PRODUCTS[pi].ulsan<base)c.push({p:PRODUCTS[pi].ulsan,src:'협약가'});
+ var pg=PROGS[S.prog];if(pg&&pg.prices[pi]!=null&&pg.prices[pi]<base)c.push({p:pg.prices[pi],src:'협약가'});
+ if(S.code)c.push({p:Math.round(base*0.9),src:'연수 -10%'});
+ var best=c[0];c.forEach(function(x){if(x.p<best.p)best=x});return{base:base,p:best.p,src:best.src}}
+function price(pi){return priceInfo(pi).p}
+function progNote(){return S.prog==='custom'?(S.progText||'').trim():(PROGS[S.prog]?PROGS[S.prog].name:'')}
+function repriceCart(){S.cart.forEach(function(x){x.amount=price(x.pi)*x.months*x.students})}
 function badge(pi){return '<span class="bd2 p'+pi+'">'+PRODUCTS[pi].name+'</span>'}
 
 /* ───────── 상태 ───────── */
-var S={step:1,region:'',school:'',type:'',cart:[],org:null,orgCode:'',orgErr:'',cls:null,open:null,draft:null,
-       nw:null,purchase:'미정',quote:null,seq:0};
+var S={step:1,region:'',school:'',type:'',cart:[],prog:'',progText:'',code:'',org:null,orgCode:'',orgErr:'',cls:null,open:null,draft:null,
+       purchase:'미정',quote:null,seq:0};
+function newEx(){return{orgCode:'',cid:1,classes:[{id:1,name:'',mode:'extend',start:null,rows:[{pi:0,months:1,students:1}]}]}}
 function newForm(){return{start:null,months:'',rows:[{pi:0,months:1,students:1}],classes:[{id:1,name:'',start:null,counts:{}}],cid:1}}
-S.nw=newForm();
+S.nw=newForm();S.nx=newEx();
 
 /* ───────── 단계 이동 ───────── */
 var STEPN=['① 견적 구성','② 견적 내역','③ 구매 방법','④ 견적서 발급','⑤ 완료'];
@@ -247,13 +256,23 @@ function updateBar(){var f=$('fbar');var t=S.cart.reduce(function(a,c){return a+
 
 /* ───────── 1. 학교 · 구매 유형 ───────── */
 function initP1(){$('region').innerHTML='<option value="">선택</option>'+REGIONS.map(function(r){return '<option>'+r+'</option>'}).join('');renderAgree()}
-function renderAgree(){$('agree').innerHTML=S.region==='울산'?'울산광역시교육청 협약가(토도한글·토도수학)가 견적에 자동으로 적용됩니다.':'지역·기관 유형에 따라 협약가가 있으면 견적에 자동으로 적용됩니다.'}
-function onRegion(){S.region=$('region').value;$('schoolErr').textContent='';onSchoolInput();renderAgree();refreshSections()}
+function renderAgree(){var t=S.region==='울산'?'울산광역시교육청 협약가(토도한글·토도수학)가 견적에 자동으로 적용됩니다.':'지역·기관 유형에 따라 협약가가 있으면 견적에 자동으로 적용됩니다.';
+ if(S.prog==='nuri')t+=' 초록우산 널응원한글 사업 참여 시 토도한글 12,200원이 적용됩니다.';
+ var n=progNote();if(n)t+=' 참여 사업(<b>'+esc(n)+'</b>)은 견적서 비고란에 표시됩니다.';
+ if(S.code)t+=' 연수 할인 코드(10%)는 다른 할인과 중복 적용되지 않고 더 낮은 단가 하나만 적용됩니다.';$('agree').innerHTML=t}
+function syncProg(){renderAgree();repriceCart();updateBar()}
+function onProg(){S.prog=$('prog').value;$('progCustom').style.display=S.prog==='custom'?'block':'none';renderAgree();repriceCart();updateBar();if(S.type)refreshSections()}
+function applyCode(){var v=$('codeIn').value.trim(),m=$('codeMsg');
+ if(!v){S.code='';m.textContent='';m.style.color='#888'}
+ else if(TRAINING_CODES&&TRAINING_CODES.indexOf(v.toUpperCase())<0){S.code='';m.textContent='유효하지 않은 코드예요. 다시 확인해 주세요.';m.style.color='#d14'}
+ else{S.code=v;m.textContent='연수 할인 10%가 적용되었어요. (다른 할인과 중복 불가 · 더 낮은 단가 적용)';m.style.color='#2f8a43'}
+ renderAgree();repriceCart();updateBar();if(S.type)refreshSections()}
+function onRegion(){S.region=$('region').value;$('schoolErr').textContent='';onSchoolInput();syncProg();refreshSections()}
 function onSchoolInput(){var q=$('school').value.trim();S.school=q;$('schoolErr').textContent='';
  var l=SCHOOLS.filter(function(s){return(!S.region||s[0]===S.region)&&q&&s[1].indexOf(q)>-1}).slice(0,8);
  var d=$('dd');d.innerHTML=l.map(function(s,i){return '<div onmousedown="pickSchool('+SCHOOLS.indexOf(s)+')">'+esc(s[1])+'<small>'+s[0]+'</small></div>'}).join('');
  d.classList.toggle('open',l.length>0);refreshSections()}
-function pickSchool(i){var s=SCHOOLS[i];S.region=s[0];S.school=s[1];$('region').value=s[0];$('school').value=s[1];$('dd').classList.remove('open');renderAgree();refreshSections()}
+function pickSchool(i){var s=SCHOOLS[i];S.region=s[0];S.school=s[1];$('region').value=s[0];$('school').value=s[1];$('dd').classList.remove('open');syncProg();refreshSections()}
 document.addEventListener('click',function(e){if(!e.target.closest('#school')&&!e.target.closest('#dd'))$('dd').classList.remove('open')});
 function setType(t){
  if(!S.region||!S.school){$('schoolErr').textContent='지역과 학교/기관명을 먼저 입력해 주세요.';window.scrollTo(0,0);return}
@@ -261,27 +280,29 @@ function setType(t){
 function refreshSections(){
  $('tNew').classList.toggle('on',S.type==='new');$('tEx').classList.toggle('on',S.type==='exist');
  $('secNew').style.display=S.type==='new'?'block':'none';$('secEx').style.display=S.type==='exist'?'block':'none';
- if(S.type==='new')renderNew();if(S.type==='exist')renderEx();updateBar()}
+ if(S.type==='new'){$('secEx').innerHTML='';renderNew()}if(S.type==='exist'){$('secNew').innerHTML='';renderEx()}updateBar()}
 
 /* ───────── 2-A. 신규 구매 : 견적 계산기 + 학급 정보 (camp 견적 계산기 방식) ───────── */
 var PCOLOR=['#5ab86a','#4a90d9','#e8729a'];
 function koDate(iso){var d=parse(iso);return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일'}
 function endCalc(start,months){var a=start.split('-').map(Number);var last=new Date(a[0],a[1]-1+months+1,0).getDate();return iso(new Date(a[0],a[1]-1+months,Math.min(a[2],last)))}
 function clsDate(v){return v==='undecided'?'미정':v?dot(v):''}
-function upLabel(pi){var p=PRODUCTS[pi];if(S.region==='울산'&&p.base!==p.ulsan)return '<s>월 '+p.base.toLocaleString()+'원/명</s><b>월 '+p.ulsan.toLocaleString()+'원/명</b><span class="dc">협약가</span>';return '월 '+p.base.toLocaleString()+'원/명'}
+function upLabel(pi){var i=priceInfo(pi);if(i.p===i.base)return '월 '+i.base.toLocaleString()+'원/명';
+ return '<s>월 '+i.base.toLocaleString()+'원/명</s><b>월 '+i.p.toLocaleString()+'원/명</b><span class="dc">'+i.src+'</span>'}
 function renderNew(){
  $('secNew').innerHTML='<div class="card calc"><h2>견적 계산기</h2>'+
- '<div class="period-section"><div class="period-label">시작일과 기간을 입력하고 필요한 기간을 확인해 보세요.</div><div class="period-row">'+
+ '<div class="period-section"><div class="period-label">시작일과 기간을 입력하고 필요한 기간을 확인해 보세요.</div><div style="margin:-4px 0 10px"><a href="#" onclick="tglBenefit(event)" style="font-size:12.5px;color:#e0911a;text-decoration:underline">여름방학 무료 제공 혜택 안내 ▾</a><div class="info" id="nBenefit" style="display:none;margin-top:6px">새학기(3월) 기준 4개월 이상 구매 시 여름방학 1개월을 무료로 제공해 드립니다.</div></div><div class="period-row">'+
  '<div class="date-group"><span class="date-group-label">시작일</span><div class="date-input-wrap"><input type="text" class="date-input" id="nStart" placeholder="연 / 월 / 일" readonly onclick="openStartCal(this,event)"></div></div>'+
  '<div class="date-group"><span class="date-group-label">이용 기간</span><input type="number" id="nMonths" min="1" placeholder="0" style="width:64px;text-align:center" oninput="nwPeriod(this.value)"><span style="font-size:13px;color:#666">개월</span></div></div>'+
- '<div class="period-end" id="nEndBox" style="display:none"><span style="color:#999">→</span><span>종료일 :</span><strong id="nEnd"></strong></div></div>'+
+ '<div class="period-end" id="nEndBox" style="display:none"><span style="color:#999">→</span><span>종료일 :</span><strong id="nEnd"></strong><span id="nEff" style="margin-left:auto"></span></div></div>'+
  '<div class="tblw"><table><thead><tr><th style="width:30%">제품</th><th class="c" style="width:20%">이용 개월 수</th><th class="c" style="width:20%">학생 수</th><th class="n" style="width:22%">총액</th><th style="width:8%"></th></tr></thead><tbody id="nRows"></tbody>'+
  '<tfoot><tr class="divider"><td colspan="3" style="font-size:15px;font-weight:500">합계</td><td class="n"><span class="gtotal" id="nGrand">0원</span></td><td></td></tr></tfoot></table></div>'+
  '<button class="add-dash" onclick="nwAddRow()">+ 제품 추가</button>'+
  '<hr style="border:none;border-top:1px solid #e0e0e0;margin:12px 0 4px">'+
  '<h2 style="font-size:16px">학급 정보 입력</h2><p class="sub" style="font-size:13px;margin-top:-6px">아래의 정보를 입력해 주시면 보다 빠른 계정 발급이 가능합니다. 구매 수량에 맞게 인원 수를 입력해 주세요.</p>'+
- '<div id="nCls"></div><div class="vmsg" id="nMsg"></div>'+
+ '<div id="nCls"></div><div id="nNotice"></div><div class="vmsg" id="nMsg"></div>'+
  '<button class="btn o wide" onclick="nwCommit()">견적에 담기</button></div>';
+ if(S.nw.start)$('nStart').value=koDate(S.nw.start);if(S.nw.months)$('nMonths').value=S.nw.months;
  renderRows();renderClassTable();updateNew()}
 function renderRows(){var f=S.nw;$('nRows').innerHTML=f.rows.map(function(r,ri){return '<tr><td><select class="ps" onchange="nwPi('+ri+',+this.value)">'+PRODUCTS.map(function(p,i){return '<option value="'+i+'"'+(i===r.pi?' selected':'')+'>'+p.name+'</option>'}).join('')+'</select><div class="up" id="nUp'+ri+'">'+upLabel(r.pi)+'</div></td>'+
   '<td class="c"><input type="number" class="mini" id="nM'+ri+'" min="1" value="'+(r.months||'')+'" oninput="nwM('+ri+',this.value)"></td>'+
@@ -298,25 +319,38 @@ function cols(){var seen={},out=[],pm={};S.nw.rows.forEach(function(r){if(r.mont
 function colLabel(c){return c.show?PRODUCTS[c.pi].short+' '+c.months+'개월':PRODUCTS[c.pi].short}
 function statusHtml(cs){return cs.map(function(c){var as=S.nw.classes.reduce(function(a,x){return a+(x.counts[c.key]||0)},0);return '<div class="sti"><span class="thb" style="background:'+PCOLOR[c.pi]+'">'+colLabel(c)+'</span><b>'+as+'/'+c.purchased+'명</b></div>'}).join('')}
 function renderClassTable(){var cs=cols(),f=S.nw;
- if(!cs.length){$('nCls').innerHTML='<div class="sub" style="text-align:center;padding:24px">위에서 제품을 추가하면 학급 배정 테이블이 표시됩니다.</div>';return}
- var h='<div class="cw"><div class="tblw"><table class="ct"><thead><tr><th style="min-width:100px">학급명</th><th style="min-width:120px">사용 시작일</th>'+cs.map(function(c){return '<th><span class="thb" style="background:'+PCOLOR[c.pi]+'">'+colLabel(c)+'</span></th>'}).join('')+'<th></th></tr></thead><tbody>';
- f.classes.forEach(function(c,ci){h+='<tr><td><input type="text" placeholder="예: '+(ci+1)+'학년 1반" value="'+esc(c.name)+'" oninput="S.nw.classes['+ci+'].name=this.value"></td>'+
-  '<td><div class="date-input-wrap"><input type="text" class="cd" placeholder="연/월/일" readonly value="'+clsDate(c.start)+'" onclick="openClassCal(this,'+ci+',event)"></div></td>'+
+ if(!cs.length){$('nCls').innerHTML='<div class="sub" style="text-align:center;padding:24px">위에서 제품을 추가하면 학급 배정 테이블이 표시됩니다.</div>';updateNotice();return}
+ var h='<div class="cw"><div class="tblw"><table class="ct"><thead><tr><th style="min-width:100px">학급명</th><th style="min-width:230px">사용 시작일</th>'+cs.map(function(c){return '<th><span class="thb" style="background:'+PCOLOR[c.pi]+'">'+colLabel(c)+'</span></th>'}).join('')+'<th></th></tr></thead><tbody>';
+ f.classes.forEach(function(c,ci){h+='<tr><td><input type="text" placeholder="예: '+(ci+1)+'학년 1반" value="'+esc(c.name)+'" oninput="S.nw.classes['+ci+'].name=this.value;updateNotice()"></td>'+
+  '<td><div style="display:flex;align-items:center"><div class="date-input-wrap"><input type="text" class="cd" placeholder="연/월/일" readonly value="'+clsDate(c.start)+'" onclick="openClassCal(this,'+ci+',event)"></div><span id="effw'+ci+'">'+effHtml(c,cs)+'</span></div></td>'+
   cs.map(function(k){return '<td><input type="number" min="0" placeholder="0" value="'+(c.counts[k.key]||'')+'" oninput="nwCount(this,'+ci+',\''+k.key+'\')"> <span class="sub">명</span></td>'}).join('')+
   '<td><button class="rm" onclick="nwDelClass('+ci+')">삭제</button></td></tr>'});
  h+='</tbody></table></div><div class="conflict" id="nConflict">한 학급에 이용 기간이 다른 프로필을 배치할 수 없습니다. 다른 학급에 배정해 주세요.</div><div class="stbar" id="nStat">'+statusHtml(cs)+'</div><div class="cfoot"><button class="addc" onclick="nwAddClass()">+ 학급 추가</button></div></div>';
- $('nCls').innerHTML=h}
+ $('nCls').innerHTML=h;updateNotice()}
+function isoOk(v){return /^\d{4}-/.test(v||'')}
+function freeMonths(start,months){if(!isoOk(start)||!(months>0))return 0;var st=parse(start),en=parse(endCalc(start,months)),n=0;
+ for(var y=st.getFullYear();y<=en.getFullYear();y++){var j=new Date(y,6,1);if(st<j&&j<=en)n++}return n}
+function effHtml(c,cs){if(!isoOk(c.start))return '';var ks=cs.filter(function(k){return(c.counts[k.key]||0)>0});if(!ks.length)ks=cs.filter(function(k){return k.purchased>0});if(!ks.length)return '';
+ var ef=ks.map(function(k){return{k:k,e:k.months+freeMonths(c.start,k.months)}});var bonus=ef.some(function(x){return x.e>x.k.months});var same=ef.every(function(x){return x.e===ef[0].e});
+ return '<span class="eff'+(bonus?' b':'')+'">실사용 '+(same?ef[0].e+'개월':ef.map(function(x){return colLabel(x.k)+' '+x.e+'개월'}).join(' · '))+'</span>'}
+function updateEff(ci){var el=$('effw'+ci);if(el)el.innerHTML=effHtml(S.nw.classes[ci],cols());updateNotice()}
+function freeGroups(list){var g={};list.forEach(function(x){if(x.free>0)(g[x.free]=g[x.free]||[]).push(x.name)});return Object.keys(g).map(function(k){return g[k].join(', ')+' 학급에 여름방학 '+k+'개월 무료 제공이 적용되었습니다.'})}
+function noticeHtml(t){return t.length?'<div class="info" style="margin-top:10px">'+t.map(esc).join('<br>')+'</div>':''}
+function updateNotice(){var el=$('nNotice');if(!el)return;var cs=cols();
+ var list=S.nw.classes.map(function(c,ci){var f=0;if(isoOk(c.start)){var ks=cs.filter(function(k){return(c.counts[k.key]||0)>0});if(!ks.length)ks=cs.filter(function(k){return k.purchased>0});ks.forEach(function(k){f=Math.max(f,freeMonths(c.start,k.months))})}return{name:c.name.trim()||(ci+1)+'번째',free:f}});
+ el.innerHTML=noticeHtml(freeGroups(list))}
 function nwAddClass(){S.nw.classes.push({id:++S.nw.cid,name:'',start:null,counts:{}});renderClassTable()}
 function nwDelClass(ci){if(S.nw.classes.length<=1)return;S.nw.classes.splice(ci,1);renderClassTable()}
 function nwCount(el,ci,key){var cs=cols(),c=S.nw.classes[ci],col=cs.filter(function(x){return x.key===key})[0];if(!col)return;var v=parseInt(el.value)||0;var cf=$('nConflict');
  if(v>0&&cs.some(function(o){return o.pi===col.pi&&o.months!==col.months&&(c.counts[o.key]||0)>0})){el.value='';c.counts[key]=0;cf.classList.add('show');setTimeout(function(){cf.classList.remove('show')},4000);$('nStat').innerHTML=statusHtml(cs);return}
  var others=S.nw.classes.reduce(function(a,x,i){return a+(i===ci?0:(x.counts[key]||0))},0);var max=Math.max(0,col.purchased-others);if(v>max){el.value=max;v=max}
- c.counts[key]=v;cf.classList.remove('show');$('nStat').innerHTML=statusHtml(cs)}
+ c.counts[key]=v;cf.classList.remove('show');$('nStat').innerHTML=statusHtml(cs);updateEff(ci)}
 function updateNew(){var f=S.nw;if(!$('nGrand'))return;var g=0,seen={};
  f.rows.forEach(function(r,ri){var t=price(r.pi)*r.months*r.students;g+=t;$('nTot'+ri).textContent=won(t);var k=r.pi+'_'+r.months;seen[k]=(seen[k]||0)+1});
  f.rows.forEach(function(r,ri){var el=$('nM'+ri);var d=seen[r.pi+'_'+r.months]>1;el.style.color=d?'#d14':'';el.style.borderColor=d?'#d14':''});
  $('nGrand').textContent=won(g);
- if(f.start&&f.months>0){$('nEnd').textContent=koDate(endCalc(f.start,f.months));$('nEndBox').style.display='flex'}else $('nEndBox').style.display='none'}
+ if(f.start&&f.months>0){var fr=freeMonths(f.start,f.months);$('nEnd').textContent=koDate(endCalc(f.start,f.months+fr));$('nEff').innerHTML='<span class="eff'+(fr?' b':'')+'">실사용 '+(f.months+fr)+'개월</span>';$('nEndBox').style.display='flex'}else $('nEndBox').style.display='none'}
+function tglBenefit(e){e.preventDefault();var b=$('nBenefit');b.style.display=b.style.display==='none'?'block':'none'}
 /* 달력 */
 function closeCals(){document.querySelectorAll('.calendar-popup').forEach(function(e){e.remove()})}
 document.addEventListener('click',closeCals);
@@ -337,7 +371,7 @@ function openCal(input,cur,pick,extras){closeCals();var pop=document.createEleme
  pop.style.top=top+'px';pop.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px'}
 window.addEventListener('scroll',closeCals,true);window.addEventListener('resize',closeCals);
 function openStartCal(input,e){e.stopPropagation();openCal(input,S.nw.start,function(v){S.nw.start=v;input.value=koDate(v);updateNew()})}
-function openClassCal(input,ci,e){e.stopPropagation();openCal(input,S.nw.classes[ci].start,function(v){S.nw.classes[ci].start=v;input.value=clsDate(v)},function(cur){
+function openClassCal(input,ci,e){e.stopPropagation();openCal(input,S.nw.classes[ci].start,function(v){S.nw.classes[ci].start=v;input.value=clsDate(v);updateEff(ci)},function(cur){
  return '<button data-x="undecided" class="'+(cur==='undecided'?'on':'')+'">미정</button>'})}
 function nwCommit(){var f=S.nw,cs=cols(),msg='';var tot=f.rows.reduce(function(a,r){return a+r.students},0);
  if(!tot)msg='제품과 학생 수를 입력해 주세요.';
@@ -347,89 +381,61 @@ function nwCommit(){var f=S.nw,cs=cols(),msg='';var tot=f.rows.reduce(function(a
  else{var nm=f.classes.map(function(c){return c.name.trim()});if(nm.some(function(n,i){return nm.indexOf(n)!==i}))msg='학급명이 중복되었어요.'}
  var m=$('nMsg');m.textContent=msg;m.classList.toggle('show',!!msg);if(msg){m.scrollIntoView({block:'center',behavior:'smooth'});return}
  var n=0;f.classes.forEach(function(c){cs.forEach(function(k){var cnt=c.counts[k.key]||0;if(cnt>0)
-  S.cart.push({id:'new'+Date.now()+'_'+n++,kind:'new',cls:c.name.trim(),pi:k.pi,months:k.months,students:cnt,from:0,start:c.start,end:/^\d{4}-/.test(c.start)?endCalc(c.start,k.months):null,amount:price(k.pi)*k.months*cnt,excl:[]})})});
+  var fr=freeMonths(c.start,k.months);S.cart.push({id:'new'+Date.now()+'_'+n++,kind:'new',cls:c.name.trim(),pi:k.pi,months:k.months,free:fr,students:cnt,from:0,start:c.start,end:isoOk(c.start)?endCalc(c.start,k.months+fr):null,amount:price(k.pi)*k.months*cnt,excl:[]})})});
  S.nw=newForm();renderNew();updateBar();toast('견적에 담았어요. 아래 버튼으로 견적 내역을 확인하세요.')}
 
-/* ───────── 2-B. 기존 학급 : 기관 코드 조회 → 학급 → 과목 ───────── */
-function renderEx(){var o=S.org;
- var h='<div class="card"><h2>이용 중인 학급 조회</h2><div class="fg"><label>기관 코드</label>'+
- '<div class="row"><input type="text" id="orgCode" class="grow" style="flex:1" placeholder="예: GP1234" value="'+esc(S.orgCode)+'" onkeydown="if(event.key===\'Enter\')lookup()"><button class="btn o" onclick="lookup()">조회</button></div>'+
- '<span class="sub">기관 코드는 LMS 로그인 화면 또는 계정 안내 메일에서 확인할 수 있어요. (테스트용 코드: GP1234, UL5678)</span>'+
- (S.orgErr?'<span class="err">'+esc(S.orgErr)+'</span>':'')+'</div>';
- if(o){h+='<div class="fg"><label>학급 선택 · '+esc(o.name)+'</label><div class="chips">'+o.classes.map(function(c){
-  var has=S.cart.some(function(x){return x.code===S.orgCode&&x.cid===c.id});
-  return '<button class="chip'+(S.cls===c.id?' on':'')+'" onclick="pickClass(\''+c.id+'\')">'+esc(c.name)+(has?' ✓':'')+'</button>'}).join('')+'</div></div>'}
- h+='</div>';
- if(o&&S.cls){var c=o.classes.filter(function(x){return x.id===S.cls})[0];h+='<div class="card"><h2>'+esc(c.name)+' 이용 현황</h2>'+[0,1,2].map(function(i){return subjHtml(c,i)}).join('')+'</div>'}
- $('secEx').innerHTML=h}
-function lookup(){var code=$('orgCode').value.trim().toUpperCase();S.orgCode=code;S.open=null;S.draft=null;S.cls=null;
- if(ORGS[code]){S.org=ORGS[code];S.orgErr=''}else{S.org=null;S.orgErr='조회되지 않는 기관 코드예요. 다시 확인해 주세요.'}renderEx()}
-function pickClass(id){S.cls=id;S.open=null;S.draft=null;renderEx()}
-function cartFor(cid,pi,kind){return S.cart.filter(function(x){return x.code===S.orgCode&&x.cid===cid&&x.pi===pi&&(!kind||x.kind===kind)})}
-function curCls(){return S.org.classes.filter(function(x){return x.id===S.cls})[0]}
-function subjHtml(c,i){var d=c.subj[i];var key=c.id+'_'+i;var isOpen=S.open===i;
- if(!d){return '<div class="subj off'+(isOpen?' on':'')+'"><div class="row">'+badge(i)+'<div class="kv grow"><span style="color:#aaa">이용 중이 아닙니다</span></div>'+
-  cartFor(c.id,i).map(tagOf).join('')+'<button class="btn s'+(isOpen?'':' o')+'" onclick="openSubj('+i+',\'addsubj\')">'+(isOpen?'닫기':'신규 추가')+'</button></div>'+(isOpen?panelHtml(c,i):'')+'</div>'}
- var rem=remMonths(d.e);
- return '<div class="subj'+(isOpen?' on':'')+'"><div class="row">'+badge(i)+'<div class="kv grow"><span>사용 인원 <b>'+d.n+'명</b></span><span>이용 기간 <b>'+dot(d.s)+' – '+dot(d.e)+'</b></span><span>'+(rem>0?'남은 기간 <b>'+rem+'개월</b>':'<b style="color:#d14">이용 기간 종료</b>')+'</span></div>'+
-  cartFor(c.id,i).map(tagOf).join('')+'<button class="btn s'+(isOpen?'':' o')+'" onclick="openSubj('+i+',\'extend\')">'+(isOpen?'닫기':'선택')+'</button></div>'+(isOpen?panelHtml(c,i):'')+'</div>'}
-function tagOf(x){return '<span class="tg o">'+({extend:'기간 연장',add:'학생 추가',addsubj:'신규 추가'})[x.kind]+' 담김</span>'}
-function openSubj(i,mode){if(S.open===i){S.open=null;S.draft=null;renderEx();return}S.open=i;setDraft(mode);renderEx()}
-function setDraft(mode){var c=curCls(),i=S.open,d=c.subj[i];S.draft={mode:mode};var ex=cartFor(c.id,i,mode)[0];
- if(mode==='extend'){S.draft.months=ex?ex.months:12;S.draft.students=ex?ex.students:d.n;S.draft.excl=ex?ex.excl.slice():[]}
- else if(mode==='add'){S.draft.students=ex?ex.students:1}
- else{S.draft.months=ex?ex.months:12;S.draft.students=ex?ex.students:1;S.draft.start=ex?ex.start:iso(today())}}
-function setMode(m){setDraft(m);renderEx()}
-function panelHtml(c,i){var d=c.subj[i],D=S.draft,h='';
- if(d){h+='<div class="seg"><button class="'+(D.mode==='extend'?'on':'')+'" onclick="setMode(\'extend\')">기간 연장</button><button class="'+(D.mode==='add'?'on':'')+'" onclick="setMode(\'add\')">학생 추가</button></div>'}
- if(D.mode==='extend')h+=extendPanel(c,i,d);else if(D.mode==='add')h+=addPanel(c,i,d);else h+=addSubjPanel(c,i);
- return '<div id="panel" style="display:flex;flex-direction:column;gap:11px">'+h+'</div>'}
-function stepper(fn,v,min,max){return '<div class="step"><button onclick="'+fn+'(-1)">−</button><input type="number" min="'+min+'" max="'+max+'" value="'+v+'" onchange="'+fn+'(0,this.value)"><button onclick="'+fn+'(1)">+</button></div>'}
-function mSelect(v,fn){var o='';for(var k=1;k<=12;k++)o+='<option value="'+k+'"'+(k===v?' selected':'')+'>'+k+'개월</option>';return '<select style="width:130px" onchange="'+fn+'(+this.value)">'+o+'</select>'}
-function extStart(d){var a=dayAfter(d.e);var t=iso(today());return a>t?a:t} // 이미 종료된 경우 오늘부터
-function extendPanel(c,i,d){var D=S.draft,st=extStart(d),en=endOf(st,D.months),red=Math.max(0,d.n-D.students);
- var h='<div class="row" style="align-items:flex-end;gap:14px"><div class="fg"><label>연장 기간</label>'+mSelect(D.months,'dMonths')+'</div>'+
- '<div class="fg"><label>연장할 학생 수</label><div class="row" style="gap:8px">'+stepper('dStu',D.students,1,999)+'<span class="sub">현재 '+d.n+'명</span></div></div>'+
- '<div class="info grow" style="padding:8px 14px;min-width:180px">연장 시작 <b>'+dot(st)+'</b><br>예상 종료일 <b style="color:#e0911a;font-size:15px">'+dot(en)+'</b></div></div>';
- if(red>0){h+='<div class="warn"><b>학생 수를 '+d.n+'명 → '+D.students+'명으로 줄여 연장합니다.</b><br>연장하지 않는 학생 '+red+'명은 현재 종료일('+dot(d.e)+') 이후 이용이 중지되고 학습 기록은 보관됩니다. 제외할 학생 이름을 입력해 주세요.</div><div class="row">';
-  for(var k=0;k<red;k++)h+='<div class="fg grow" style="min-width:140px"><label>제외할 학생 '+(k+1)+'</label><input type="text" placeholder="학생 이름" value="'+esc(D.excl[k]||'')+'" oninput="dExcl('+k+',this.value)"></div>';h+='</div>'}
- if(D.students>d.n)h+='<div class="info">추가된 인원 '+(D.students-d.n)+'명은 연장 시작일('+dot(st)+')부터 이용합니다. 지금 바로 쓰려면 <b>학생 추가</b>를 함께 선택해 주세요.</div>';
- h+='<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+D.months+'개월 = <b style="color:#333">'+(D.students*D.months)+'</b> · <b style="color:#333">'+won(price(i)*D.students*D.months)+'</b></span><button class="btn o" id="dGo" onclick="dCommit()"'+(red>0&&!exclOk(red)?' disabled':'')+'>견적에 담기</button></div>';return h}
-function exclOk(red){var D=S.draft;for(var k=0;k<red;k++)if(!(D.excl[k]||'').trim())return false;return true}
-function addPanel(c,i,d){var D=S.draft,rem=remMonths(d.e);
- if(rem<=0)return '<div class="warn">이용 기간이 끝난 과목은 학생 추가를 할 수 없어요. <b>기간 연장</b>을 선택해 주세요.</div>';
- return '<div class="row" style="align-items:flex-start;gap:16px"><div class="fg"><label>추가할 학생 수</label><div class="row" style="gap:8px">'+stepper('dStu',D.students,1,999)+'<span class="sub">'+d.n+'명 → '+(d.n+D.students)+'명</span></div></div>'+
- '<div class="fg grow" style="min-width:220px"><label>이용 기간</label><div class="lock">현재 종료일까지 · '+dot(d.e)+' ('+rem+'개월) 🔒</div></div></div>'+
- '<div class="info">같은 학급은 이용권 하나로 관리되어, 추가하는 학생의 종료일은 기존 학생과 같게 맞춰집니다. 더 오래 이용하려면 <b>기간 연장</b>을 함께 선택해 주세요.</div>'+
- '<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+rem+'개월 = <b style="color:#333">'+(D.students*rem)+'</b> · <b style="color:#333">'+won(price(i)*D.students*rem)+'</b></span><button class="btn o" onclick="dCommit()">견적에 담기</button></div>'}
-function addSubjPanel(c,i){var D=S.draft,en=endOf(D.start,D.months);
- return '<div class="row" style="align-items:flex-end;gap:14px"><div class="fg"><label>시작일</label><input type="date" style="width:160px" value="'+D.start+'" onchange="dStart(this.value)"></div>'+
- '<div class="fg"><label>이용 기간</label>'+mSelect(D.months,'dMonths')+'</div>'+
- '<div class="fg"><label>학생 수</label>'+stepper('dStu',D.students,1,999)+'</div>'+
- '<div class="info grow" style="padding:8px 14px;min-width:160px">예상 종료일 <b style="color:#e0911a;font-size:15px">'+dot(en)+'</b></div></div>'+
- '<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+D.months+'개월 = <b style="color:#333">'+(D.students*D.months)+'</b> · <b style="color:#333">'+won(price(i)*D.students*D.months)+'</b></span><button class="btn o" onclick="dCommit()">견적에 담기</button></div>'}
-function dMonths(v){S.draft.months=v;renderEx()}
-function dStart(v){if(v){S.draft.start=v;renderEx()}}
-function dStu(delta,val){var D=S.draft;var v=delta?D.students+delta:parseInt(val)||1;D.students=Math.min(999,Math.max(1,v));
- if(D.mode==='extend'){var c=curCls(),n=c.subj[S.open].n;D.excl=D.excl.slice(0,Math.max(0,n-D.students))}renderEx()}
-function dExcl(k,v){S.draft.excl[k]=v;var c=curCls(),red=Math.max(0,c.subj[S.open].n-S.draft.students);var b=$('dGo');if(b)b.disabled=!exclOk(red)}
-function dCommit(){var c=curCls(),i=S.open,d=c.subj[i],D=S.draft,it;
- S.cart=S.cart.filter(function(x){return!(x.code===S.orgCode&&x.cid===c.id&&x.pi===i&&x.kind===D.mode)});
- var base={id:'ex'+Date.now()+'_'+i,code:S.orgCode,cid:c.id,cls:c.name,pi:i,kind:D.mode,excl:[]};
- if(D.mode==='extend'){var st=extStart(d),red=Math.max(0,d.n-D.students);
-  it={months:D.months,students:D.students,from:d.n,start:st,end:endOf(st,D.months),excl:D.excl.slice(0,red).map(function(s){return s.trim()})}}
- else if(D.mode==='add'){var rem=remMonths(d.e);it={months:rem,students:D.students,from:d.n,start:iso(today())>d.s?iso(today()):d.s,end:d.e}}
- else it={months:D.months,students:D.students,from:0,start:D.start,end:endOf(D.start,D.months)};
- for(var k in it)base[k]=it[k];base.amount=price(i)*base.months*base.students;S.cart.push(base);
- S.open=null;S.draft=null;renderEx();updateBar();toast('견적에 담았어요. 다른 과목·학급도 이어서 담을 수 있어요.')}
+/* ───────── 2-B. 기존 학급 연장·추가 (수기 입력: 기관 코드 + 학급별 블록) ───────── */
+function effRows(c){if(!isoOk(c.start))return '';var ef=c.rows.filter(function(r){return r.students>0&&r.months>0}).map(function(r){return{pi:r.pi,m:r.months,e:r.months+freeMonths(c.start,r.months)}});if(!ef.length)return '';
+ var bonus=ef.some(function(x){return x.e>x.m}),same=ef.every(function(x){return x.e===ef[0].e});
+ return '<span class="eff'+(bonus?' b':'')+'">실사용 '+(same?ef[0].e+'개월':ef.map(function(x){return PRODUCTS[x.pi].short+' '+x.e+'개월'}).join(' · '))+'</span>'}
+function exBlock(c,ci){var x=S.nx,sum=0;
+ var rows=c.rows.map(function(r,ri){var t=price(r.pi)*r.months*r.students;sum+=t;
+  return '<tr><td><select class="ps" onchange="xPi('+ci+','+ri+',+this.value)">'+PRODUCTS.map(function(p,i){return '<option value="'+i+'"'+(i===r.pi?' selected':'')+'>'+p.name+'</option>'}).join('')+'</select><div class="up" id="xUp'+ci+'_'+ri+'">'+upLabel(r.pi)+'</div></td>'+
+  '<td class="c"><input type="number" class="mini" min="1" value="'+(r.months||'')+'" oninput="xM('+ci+','+ri+',this.value)"></td>'+
+  '<td class="c"><input type="number" class="mini" min="0" value="'+r.students+'" oninput="xS('+ci+','+ri+',this.value)"></td>'+
+  '<td class="n" id="xTot'+ci+'_'+ri+'">'+won(t)+'</td><td class="c">'+(c.rows.length>1?'<button class="rm" onclick="xDelRow('+ci+','+ri+')">삭제</button>':'')+'</td></tr>'}).join('');
+ return '<div class="card calc" style="gap:10px"><div class="row"><input type="text" class="grow" style="flex:1;min-width:150px" placeholder="학급명 (예: 3학년 1반)" value="'+esc(c.name)+'" oninput="xName('+ci+',this.value)">'+
+  '<div class="row" style="gap:6px"><button class="btn s'+(c.mode==='extend'?' o':'')+'" onclick="xMode('+ci+',\'extend\')">기간 연장</button><button class="btn s'+(c.mode==='add'?' o':'')+'" onclick="xMode('+ci+',\'add\')">학생 추가</button></div>'+
+  (x.classes.length>1?'<button class="rm" onclick="xDelClass('+ci+')">삭제</button>':'')+'</div>'+
+  '<div class="row"><span class="date-group-label">사용 시작일</span><div class="date-input-wrap"><input type="text" class="date-input" placeholder="연 / 월 / 일" readonly value="'+clsDate(c.start)+'" onclick="xCal(this,'+ci+',event)"></div><span id="xEff'+ci+'">'+effRows(c)+'</span></div>'+
+  '<div class="tblw"><table><thead><tr><th style="width:34%">제품</th><th class="c">이용 개월 수</th><th class="c">학생 수</th><th class="n">총액</th><th></th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr class="divider"><td colspan="3" style="font-weight:500">합계</td><td class="n"><span id="xSub'+ci+'" style="font-size:16px;font-weight:600">'+won(sum)+'</span></td><td></td></tr></tfoot></table></div>'+
+  '<div><button class="btn s" onclick="xAddRow('+ci+')">+ 제품 추가</button></div></div>'}
+function renderEx(){var x=S.nx;
+ var h='<div class="card"><h2>이용 중인 기관 정보</h2><div class="fg"><label>기관 코드</label><input type="text" placeholder="기관 코드를 입력해 주세요" autocomplete="off" value="'+esc(x.orgCode)+'" oninput="S.nx.orgCode=this.value"><span class="sub">기관 코드는 LMS 로그인 화면 또는 계정 안내 메일에서 확인할 수 있어요.</span></div></div>';
+ x.classes.forEach(function(c,ci){h+=exBlock(c,ci)});
+ h+='<button class="add-dash" style="margin-bottom:14px" onclick="xAddClass()">+ 학급 추가 입력하기</button><div id="xNotice"></div><div class="vmsg" id="xMsg" style="margin:10px 0"></div><button class="btn o wide" onclick="xCommit()">견적에 담기</button>';
+ $('secEx').innerHTML=h;updateXNotice()}
+function xName(ci,v){S.nx.classes[ci].name=v;updateXNotice()}
+function xMode(ci,m){S.nx.classes[ci].mode=m;renderEx()}
+function xAddRow(ci){S.nx.classes[ci].rows.push({pi:0,months:1,students:1});renderEx()}
+function xDelRow(ci,ri){S.nx.classes[ci].rows.splice(ri,1);renderEx()}
+function xAddClass(){var x=S.nx;x.classes.push({id:++x.cid,name:'',mode:'extend',start:null,rows:[{pi:0,months:1,students:1}]});renderEx()}
+function xDelClass(ci){S.nx.classes.splice(ci,1);renderEx()}
+function xPi(ci,ri,v){S.nx.classes[ci].rows[ri].pi=v;$('xUp'+ci+'_'+ri).innerHTML=upLabel(v);xUpd(ci)}
+function xM(ci,ri,v){S.nx.classes[ci].rows[ri].months=parseInt(v)||0;xUpd(ci)}
+function xS(ci,ri,v){S.nx.classes[ci].rows[ri].students=Math.max(0,parseInt(v)||0);xUpd(ci)}
+function xUpd(ci){var c=S.nx.classes[ci],sum=0;c.rows.forEach(function(r,ri){var t=price(r.pi)*r.months*r.students;sum+=t;var e=$('xTot'+ci+'_'+ri);if(e)e.textContent=won(t)});$('xSub'+ci).textContent=won(sum);$('xEff'+ci).innerHTML=effRows(c);updateXNotice()}
+function xCal(input,ci,e){e.stopPropagation();var c=S.nx.classes[ci];openCal(input,c.start,function(v){c.start=v;input.value=clsDate(v);xUpd(ci)},function(cur){return '<button data-x="undecided" class="'+(cur==='undecided'?'on':'')+'">미정</button>'})}
+function updateXNotice(){var el=$('xNotice');if(!el)return;
+ var list=S.nx.classes.map(function(c,ci){var f=0;if(isoOk(c.start))c.rows.forEach(function(r){if(r.students>0&&r.months>0)f=Math.max(f,freeMonths(c.start,r.months))});return{name:c.name.trim()||(ci+1)+'번째',free:f}});
+ el.innerHTML=noticeHtml(freeGroups(list))}
+function xCommit(){var x=S.nx,msg='';
+ if(!x.orgCode.trim())msg='기관 코드를 입력해 주세요.';
+ else if(x.classes.some(function(c){return!c.name.trim()}))msg='학급명을 입력해 주세요.';
+ else if(x.classes.some(function(c){return!c.start}))msg='사용 시작일을 선택해 주세요.';
+ else if(x.classes.some(function(c){return!c.rows.some(function(r){return r.students>0&&r.months>0})}))msg='제품의 이용 개월 수와 학생 수를 입력해 주세요.';
+ var m=$('xMsg');m.textContent=msg;m.classList.toggle('show',!!msg);if(msg){m.scrollIntoView({block:'center',behavior:'smooth'});return}
+ var n=0;x.classes.forEach(function(c){c.rows.forEach(function(r){if(r.students>0&&r.months>0){var fr=freeMonths(c.start,r.months);
+  S.cart.push({id:'ex'+Date.now()+'_'+n++,kind:c.mode,code:x.orgCode.trim(),cls:c.name.trim(),pi:r.pi,months:r.months,free:fr,students:r.students,from:0,start:c.start,end:isoOk(c.start)?endCalc(c.start,r.months+fr):null,amount:price(r.pi)*r.months*r.students,excl:[]})}})});
+ var oc=x.orgCode;S.nx=newEx();S.nx.orgCode=oc;renderEx();updateBar();toast('견적에 담았어요. 아래 버튼으로 견적 내역을 확인하세요.')}
 
 /* ───────── 3. 견적 내역 · 학급 정보 자동 입력 ───────── */
-var KIND={new:'신규 구매',extend:'기간 연장',add:'학생 추가',addsubj:'신규 과목'};
+var KIND={new:'신규 구매',renew:'연장·추가',extend:'기간 연장',add:'학생 추가',addsubj:'신규 과목'};
 function total(){return S.cart.reduce(function(a,c){return a+c.amount},0)}
 function noteOf(x){if(x.kind==='extend'&&x.from!==x.students)return x.from+' → '+x.students+'명';return ''}
-function lines(items){var g={},out=[];(items||S.cart).forEach(function(x){var k=x.pi+'|'+x.kind+'|'+x.months;if(!g[k]){g[k]={key:k,pi:x.pi,kind:x.kind,months:x.months,students:0,amount:0};out.push(g[k])}g[k].students+=x.students;g[k].amount+=x.amount});
- out.sort(function(a,b){return a.pi!==b.pi?a.pi-b.pi:a.kind!==b.kind?(a.kind<b.kind?-1:1):a.months-b.months});return out.map(function(l){l.price=l.amount/(l.months*l.students);return l})}
-function renderP2(){var L=lines();var h='<div class="card"><h2>견적 내역</h2>';
+function lines(items){var g={},out=[];(items||S.cart).forEach(function(x){var k=x.pi+'|'+x.kind+'|'+x.months+'|'+(x.free||0);if(!g[k]){g[k]={key:k,pi:x.pi,kind:x.kind,months:x.months,free:x.free||0,students:0,amount:0};out.push(g[k])}g[k].students+=x.students;g[k].amount+=x.amount});
+ out.sort(function(a,b){return a.pi!==b.pi?a.pi-b.pi:a.kind!==b.kind?(a.kind<b.kind?-1:1):a.months!==b.months?a.months-b.months:a.free-b.free});return out.map(function(l){l.price=l.amount/(l.months*l.students);return l})}
+function renderP2(){var L=lines();var h='<div class="card"><h2>견적 내역</h2>'+((progNote()||S.code)?'<div class="sub">'+(progNote()?'참여 사업: <b>'+esc(progNote())+'</b>':'')+(progNote()&&S.code?' · ':'')+(S.code?'연수 할인 10% 적용':'')+'</div>':'');
  if(!L.length)h+='<div class="info">담은 항목이 없어요. 이전 화면에서 항목을 담아 주세요.</div>';
  else{h+='<div class="tblw"><table><tr><th>제품</th><th class="n">단가(월/명)</th><th class="c">개월 수</th><th class="c">학생 수</th><th class="n">금액</th><th></th></tr>'+
   L.map(function(l){return '<tr><td>'+badge(l.pi)+(l.kind!=='new'?' <span class="tg o">'+KIND[l.kind]+'</span>':'')+'</td><td class="n">'+l.price.toLocaleString()+'원</td><td class="c">'+l.months+'</td><td class="c">'+l.students+'</td><td class="n">'+won(l.amount)+'</td><td><button class="btn s" onclick="delGroup(\''+l.key+'\')">✕</button></td></tr>'}).join('')+
@@ -438,16 +444,16 @@ function renderP2(){var L=lines();var h='<div class="card"><h2>견적 내역</h2
  if(S.cart.length){var order=[];S.cart.forEach(function(x){var k=(x.code||'')+'|'+x.cls;if(order.indexOf(k)<0)order.push(k)});
  var rows=S.cart.slice().sort(function(a,b){return order.indexOf((a.code||'')+'|'+a.cls)-order.indexOf((b.code||'')+'|'+b.cls)});
  var span={};rows.forEach(function(x){var k=(x.code||'')+'|'+x.cls;span[k]=(span[k]||0)+1});
- h+='<div class="card"><div class="row"><h2 class="grow">학급 정보</h2><span class="tg">자동 입력</span></div><div class="sub">조회한 정보와 선택한 내용으로 채워졌어요. 학생 이름은 일부만 표시됩니다.</div><div class="tblw"><table style="table-layout:fixed;min-width:560px"><colgroup><col style="width:24%"><col style="width:14%"><col><col style="width:15%"><col style="width:19%"></colgroup><tr><th colspan="2">학급 - 과목</th><th>변경 내용</th><th class="c">적용 후 인원</th><th>적용 후 종료일</th></tr>'+
+ h+='<div class="card"><div class="row"><h2 class="grow">학급 정보</h2><span class="tg">자동 입력</span></div><div class="sub">입력하신 내용으로 채워졌어요.</div><div class="tblw"><table style="table-layout:fixed;min-width:560px"><colgroup><col style="width:24%"><col style="width:14%"><col><col style="width:15%"><col style="width:19%"></colgroup><tr><th colspan="2">학급 - 과목</th><th>변경 내용</th><th class="c">학생 수</th><th>종료일</th></tr>'+
   rows.map(function(x,i){var k=(x.code||'')+'|'+x.cls;var first=i===0||(rows[i-1].code||'')+'|'+rows[i-1].cls!==k;
    return '<tr'+(first&&i>0?' style="border-top:2px solid #eee"':'')+'>'+(first?'<td rowspan="'+span[k]+'" style="font-weight:700;font-size:14px;vertical-align:middle;white-space:normal;border-bottom:1px solid #f0f0f0">'+esc(x.cls)+'</td>':'')+
-   '<td>'+badge(x.pi).replace('>'+PRODUCTS[x.pi].name+'<','>'+PRODUCTS[x.pi].short+'<')+'</td><td style="white-space:normal">'+changeText(x)+'</td><td class="c">'+(x.kind==='add'?x.from+x.students:x.students)+'명</td><td>'+endTxt(x)+'</td></tr>'}).join('')+'</table></div></div>'}
+   '<td>'+badge(x.pi).replace('>'+PRODUCTS[x.pi].name+'<','>'+PRODUCTS[x.pi].short+'<')+'</td><td style="white-space:normal">'+changeText(x)+'</td><td class="c">'+x.students+'명</td><td>'+endTxt(x)+'</td></tr>'}).join('')+'</table></div></div>'}
  h+='<div class="row" style="justify-content:space-between"><button class="btn" onclick="go(1)">← 이전</button><button class="btn o" '+(S.cart.length?'':'disabled')+' onclick="go(3)">다음: 구매 방법 안내 →</button></div>';
  $('p2').innerHTML=h}
 function endTxt(x){return x.end?dot(x.end):'미정'}
-function changeText(x){if(x.kind==='new'||x.kind==='addsubj')return '신규 '+x.months+'개월';if(x.kind==='add')return '학생 '+x.students+'명 추가';
- var t='기간 연장 '+x.months+'개월';if(x.excl&&x.excl.length)t+=' · '+esc(mask(x.excl[0]))+(x.excl.length>1?' 외 '+(x.excl.length-1)+'명':'')+' 제외';return t}
-function delGroup(k){S.cart=S.cart.filter(function(x){return(x.pi+'|'+x.kind+'|'+x.months)!==k});renderP2();updateBar()}
+function changeText(x){var f=x.free?' + 여름방학 무료 '+x.free+'개월':'';
+ if(x.kind==='extend')return '기간 연장 '+x.months+'개월'+f;if(x.kind==='add')return '학생 추가 · '+x.months+'개월'+f;if(x.kind==='renew')return '연장·추가 '+x.months+'개월'+f;return '신규 '+x.months+'개월'+f}
+function delGroup(k){S.cart=S.cart.filter(function(x){return(x.pi+'|'+x.kind+'|'+x.months+'|'+(x.free||0))!==k});renderP2();updateBar()}
 
 /* ───────── 4. 구매 방법 안내 · 선택 ───────── */
 var GUIDE='card';
@@ -500,7 +506,7 @@ function issue(){var e='';var n=F.name.trim(),m=F.email.trim(),p=F.phone.trim();
  setTimeout(function(){var seq=lsGet(LS_SEQ,0)+1;lsSet(LS_SEQ,seq);var d=new Date();
   var q={no:'Q-'+d.getFullYear()+'-'+('000'+seq).slice(-4),issuedAt:d.toISOString(),school:S.school,region:S.region,type:S.type,
    items:JSON.parse(JSON.stringify(S.cart)),total:total(),purchase:S.purchase,
-   contact:{name:n,email:m,phone:p},purpose:F.purpose.trim(),consent:{privacy:true,marketing:F.mk,at:d.toISOString()},consult:null,
+   contact:{name:n,email:m,phone:p},purpose:F.purpose.trim(),program:progNote(),trainingCode:S.code,consent:{privacy:true,marketing:F.mk,at:d.toISOString()},consult:null,
    paymentLink:S.purchase==='카드 결제'?'https://pay.example.test/'+('000'+seq).slice(-4):null};
   var all=lsGet(LS_Q,[]);all.push(q);lsSet(LS_Q,all);S.quote=q;go(5)},600)}
 
@@ -531,7 +537,7 @@ function consult(){var e='';if(C.known==='yes'&&!C.budget)e='가용 예산을 �
 function reGuide(){S.step=3;go(3);}
 function showSaved(){$('saved').innerHTML='<pre>'+esc(JSON.stringify(lsGet(LS_Q,[]),null,1))+'</pre>'}
 function clearSaved(){try{localStorage.removeItem(LS_Q);localStorage.removeItem(LS_SEQ)}catch(e){}renderP5();toast('저장된 테스트 데이터를 비웠어요')}
-function resetAll(){S.cart=[];S.type='';S.org=null;S.orgCode='';S.cls=null;S.open=null;S.draft=null;S.nw=newForm();S.purchase='미정';S.quote=null;
+function resetAll(){S.prog='';S.progText='';S.code='';$('prog').value='';$('progCustom').style.display='none';$('progCustom').value='';$('codeIn').value='';$('codeMsg').textContent='';S.cart=[];S.type='';S.org=null;S.orgCode='';S.cls=null;S.open=null;S.draft=null;S.nw=newForm();S.nx=newEx();S.purchase='미정';S.quote=null;
  F={name:'',email:'',phone:'',purpose:'',agree:false,mk:false};C={known:'yes',budget:'',time:BUDGET_TIMES[0],agree:false};
  $('school').value='';$('region').value='';S.school='';S.region='';renderAgree();go(1);refreshSections()}
 function dlPdf(){var q=S.quote,L=lines(q.items);var d=new Date(q.issuedAt);var f=function(n){return n.toLocaleString('ko-KR')};
@@ -539,7 +545,7 @@ function dlPdf(){var q=S.quote,L=lines(q.items);var d=new Date(q.issuedAt);var f
  var T='border:1px solid #bbb;padding:7px 10px;',LB='background:#f0f0f0;font-weight:600;text-align:center;',C='text-align:center;';
  var td='border:1px solid #bbb;padding:7px 6px;text-align:center;font-size:12px;vertical-align:middle;';
  var th='background:#e8e8e8;border:1px solid #bbb;padding:7px 6px;text-align:center;font-size:12px;font-weight:600;';
- var rows=L.map(function(l,i){return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'">'+PRODUCTS[l.pi].name+'</td><td style="'+td+'">'+l.months+'</td><td style="'+td+'">'+l.students+'</td><td style="'+td+'">'+f(l.price)+'</td><td style="'+td+'text-align:right;">'+f(l.amount)+'</td><td style="'+td+'text-align:left;font-size:11px;">'+(l.kind!=='new'?KIND[l.kind]:'')+'</td></tr>'}).join('');
+ var rows=L.map(function(l,i){return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'">'+PRODUCTS[l.pi].name+'</td><td style="'+td+'">'+l.months+'</td><td style="'+td+'">'+l.students+'</td><td style="'+td+'">'+f(l.price)+'</td><td style="'+td+'text-align:right;">'+f(l.amount)+'</td><td style="'+td+'text-align:left;font-size:11px;">'+[l.kind!=='new'?KIND[l.kind]:'',l.free?'여름방학 '+l.free+'개월 무료 제공':'',q.program||''].filter(Boolean).join(' / ')+'</td></tr>'}).join('');
  rows+='<tr><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'color:#555;">이하 여백</td><td style="'+td+'"></td></tr>';
  $('qdoc').innerHTML='<div id="qd" style="width:794px;padding:60px 60px 40px;background:#fff;font-family:\'Malgun Gothic\',\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;font-size:12px;color:#111">'+
  '<div style="text-align:center;font-size:28px;font-weight:700;letter-spacing:12px;margin-bottom:32px">견 적 서</div>'+
