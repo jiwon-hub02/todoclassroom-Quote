@@ -1,1315 +1,569 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>토도 클래스룸 견적 확인하기</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nanum+Square+Round:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      color: #333;
-      padding: 32px 20px;
-    }
-    .page { display: none; }
-    .page.active { display: block; }
-    .school-dropdown { display:none; position:absolute; left:0; right:0; top:100%; background:#fff; border:1px solid #ddd; border-top:none; border-radius:0 0 8px 8px; max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-    .school-dropdown.open { display:block; }
-    .school-item { padding:10px 14px; cursor:pointer; font-size:14px; border-bottom:1px solid #f0f0f0; }
-    .school-item:hover { background:#fef6e8; }
-    .school-item .school-type { font-size:11px; color:#999; margin-left:6px; }
-    .school-item .school-region { font-size:11px; color:#aaa; float:right; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>토도 클래스룸 견적 확인하기 (테스트)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR','Pretendard','Apple SD Gothic Neo',-apple-system,sans-serif;background:#f5f5f5;color:#333;font-size:14px;line-height:1.5;word-break:keep-all;padding-bottom:90px}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:820px;margin:0 auto;padding:20px 16px}
+.testbar{background:#fef6e8;border-bottom:1px solid #f0d8a0;color:#b8730a;font-size:12.5px;text-align:center;padding:7px 12px}
+h1{font-size:22px;font-weight:800;color:#2b2b2b;margin:6px 0 14px}
+h2{font-size:16.5px;font-weight:800}
+.sub{font-size:12.5px;color:#888}
+.steps{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.steps span{font-size:12.5px;font-weight:700;color:#aaa;background:#fff;border:1px solid #e8e8e8;border-radius:999px;padding:4px 12px}
+.steps span.on{background:#f5a623;border-color:#f5a623;color:#fff}
+.steps span.done{color:#e0911a;border-color:#f5a623}
+.card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.fg{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fg>label{font-size:12.5px;color:#555;font-weight:600}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],select{border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;min-height:38px;outline:none;width:100%}
+input:focus,select:focus{border-color:#f5a623}
+input:disabled{background:#f5f5f5;color:#999}
+.btn{border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:700;background:#fff;color:#555;border:1px solid #ddd;white-space:nowrap}
+.btn.o{background:#f5a623;color:#fff;border-color:#f5a623}
+.btn.o:hover{background:#e0911a}
+.btn.s{padding:5px 11px;font-size:12.5px}
+.btn.wide{width:100%;padding:13px;font-size:15.5px}
+.btn:disabled{background:#e8e8e8;color:#aaa;border-color:#e8e8e8;cursor:not-allowed}
+.choice{flex:1;min-width:200px;border:2px solid #e8e8e8;border-radius:12px;padding:13px 15px;background:#fff;text-align:left;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#888}
+.choice b{font-size:15px;color:#333}
+.choice.on{border-color:#f5a623;background:#fef6e8}
+.info{background:#fef6e8;border-radius:10px;padding:10px 14px;font-size:13px;color:#555;line-height:1.65}
+.warn{background:#fef0f0;border:1px solid #f0d0d0;border-radius:10px;padding:10px 14px;font-size:13px;color:#a33;line-height:1.65}
+.err{color:#d14;font-size:12.5px}
+.tblw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:#fafbfc;color:#666;font-weight:600;padding:7px 9px;border-bottom:1px solid #e8e8e8;text-align:left;white-space:nowrap}
+td{padding:8px 9px;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+td.n,th.n{text-align:right}td.c,th.c{text-align:center}
+tr.total td{background:#fef6e8;font-weight:700;border-bottom:none}
+td input{min-width:64px;padding:5px 8px;min-height:32px}
+.bd2{display:inline-block;color:#fff;border-radius:999px;padding:2px 11px;font-size:12px;font-weight:700}
+.bd2.p0{background:#5ab86a}.bd2.p1{background:#4a90d9}.bd2.p2{background:#e8729a}
+.tg{display:inline-block;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;background:#f0f0f0;color:#666;white-space:nowrap}
+.tg.o{background:#fcecd0;color:#b8730a}.tg.g{background:#e3f5e7;color:#2f8a43}.tg.r{background:#fde4e4;color:#c33}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid #ddd;background:#fff;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:#555}
+.chip.on{background:#f5a623;border-color:#f5a623;color:#fff}
+.subj{border:1px solid #e8e8e8;border-radius:12px;padding:13px 15px;display:flex;flex-direction:column;gap:11px;background:#fff}
+.subj.on{border-color:#f5a623}.subj.off{background:#fafbfc}
+.kv{display:flex;gap:6px 16px;font-size:13px;color:#555;flex-wrap:wrap}.kv b{color:#1a1a1a}
+.seg{display:flex;background:#f0f0f0;border-radius:10px;padding:4px;gap:4px}
+.seg button{flex:1;border:none;background:none;text-align:center;padding:8px;border-radius:7px;font-size:14px;color:#777;font-weight:600}
+.seg button.on{background:#fff;color:#e0911a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.step{display:inline-flex;align-items:center;border:1px solid #ddd;border-radius:8px;overflow:hidden;background:#fff}
+.step button{width:38px;height:38px;border:none;background:#fafbfc;font-size:17px;color:#777}
+.step button:hover{background:#fef6e8}
+.step input{width:58px;text-align:center;border:none;border-radius:0;font-weight:700;min-height:38px;padding:0}
+.lock{background:#f5f5f5;color:#777;border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:13.5px}
+.pm{display:flex;gap:8px;flex-wrap:wrap}
+.pm button{flex:1;min-width:120px;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;background:#fff;text-align:left;display:flex;flex-direction:column;font-size:12px;color:#888}
+.pm button b{font-size:14px;color:#333}.pm button.on{border-color:#f5a623;background:#fef6e8}
+.rad{display:inline-block;width:15px;height:15px;border:1.5px solid #ccc;border-radius:50%;margin-right:7px;vertical-align:-3px;background:#fff}
+.choice.on .rad{border:4.5px solid #f5a623}
+.consent{font-size:13px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.consent input{width:17px;min-height:17px;margin-top:3px;accent-color:#f5a623;flex:none}
+.consent u{color:#e0911a;cursor:pointer;margin-left:4px;background:none;border:none;font-size:13px;text-decoration:underline;font-family:inherit}
+.cdetail{display:none;background:#fafbfc;border:1px solid #eee;border-radius:8px;padding:10px 12px;font-size:12px;color:#666;line-height:1.7}
+.cdetail.open{display:block}
+.fbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e8e8e8;padding:12px 16px;z-index:50;display:none}
+.fbar.show{display:block}
+.fbar .in{max-width:820px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.done{align-items:center;text-align:center}
+.done .ck{width:46px;height:46px;border-radius:50%;background:#fef6e8;color:#f5a623;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.dd{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;max-height:210px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none}
+.dd.open{display:block}.dd div{padding:9px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0}.dd div:hover{background:#fef6e8}
+.dd small{color:#999;margin-left:6px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:99;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.page{display:none}.page.active{display:block}
+pre{font-size:11.5px;background:#fafbfc;border:1px solid #eee;border-radius:8px;padding:10px;overflow:auto;max-height:260px}
+#qdoc{display:none}
 
-    .calc-section {
-      background: #fff;
-      border-radius: 12px;
-      border: 1px solid #e8e8e8;
-      padding: 24px;
-      max-width: 680px;
-      margin: 0 auto 20px;
-    }
-    .calc-section h2 { font-family: 'Nanum Square Round', 'Pretendard', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 20px; color: #333; }
-
-    .page-title {
-      text-align: center;
-      font-family: 'Nanum Square Round', 'Pretendard', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: #333;
-      margin-bottom: 28px;
-      max-width: 680px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-    .form-group input[type=text],
-    .form-group input[type=email],
-    .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      color: #1a1a1a;
-      outline: none;
-      background: #fff;
-    }
-    .form-group input:focus, .form-group select:focus { border-color: #f5a623; }
-    .form-group .region-row { display: flex; gap: 10px; }
-    .form-group .region-row select { flex: 0 0 140px; }
-    .form-group .region-row input { flex: 1; display: none; }
-
-    .consent-box {
-      margin-top: 24px;
-      max-width: 680px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .consent-row {
-      display: flex; align-items: flex-start; gap: 12px;
-      font-size: 15px; color: #333; line-height: 1.5;
-      cursor: pointer; margin-bottom: 12px;
-    }
-    .consent-row input[type=checkbox] {
-      flex: 0 0 auto; width: 22px; height: 22px; margin: 0;
-      accent-color: #f5a623; cursor: pointer;
-    }
-    .consent-row b { font-weight: 700; }
-    .consent-toggle {
-      font-size: 15px; color: #e0911a; text-decoration: underline;
-      background: none; border: none; padding: 0; cursor: pointer; white-space: nowrap;
-    }
-    .consent-detail {
-      display: none;
-      margin: 0 0 18px 34px; padding: 16px 18px;
-      background: #fef6e8; border-radius: 12px;
-      font-size: 13px; color: #555; line-height: 1.8;
-    }
-    .consent-detail.open { display: block; }
-    .btn-consent {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      font-family: 'Nanum Square Round', 'Pretendard', sans-serif;
-      font-size: 15px;
-      font-weight: 800;
-      color: #fff;
-      background: #f5a623;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .btn-consent:hover { background: #e0911a; }
-    .btn-consent:disabled { background: #bbb; cursor: not-allowed; }
-
-    /* 울산 팝업 */
-    .modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.4); z-index: 200;
-      align-items: center; justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: #fff; border-radius: 12px; padding: 28px 24px;
-      max-width: 420px; width: 90%; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-      text-align: center;
-    }
-    .modal-icon { font-size: 32px; margin-bottom: 12px; }
-    .modal-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-    .modal-msg { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 20px; }
-    .modal-btn {
-      padding: 9px 28px; font-size: 14px; font-weight: 500;
-      color: #fff; background: #f5a623; border: none; border-radius: 8px; cursor: pointer;
-    }
-    .modal-btn:hover { background: #e0911a; }
-
-    /* 기간 계산 도우미 */
-    .period-section {
-      margin-bottom: 20px; padding: 14px 16px;
-      background: #fafbfc; border: 1px dashed #d8d8d8; border-radius: 8px;
-    }
-    .period-label { font-size: 13px; color: #999; margin-bottom: 10px; }
-    .period-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .date-group { display: flex; align-items: center; gap: 5px; }
-    .date-group-label { font-size: 12px; color: #888; white-space: nowrap; }
-    .date-input-wrap { position: relative; }
-    .date-input {
-      padding: 7px 8px; font-size: 13px; border: 1px solid #ddd;
-      border-radius: 6px; outline: none; cursor: pointer; background: #fff;
-      width: 135px; color: #1a1a1a;
-    }
-    .date-input:focus { border-color: #aaa; }
-    .date-input::placeholder { color: #bbb; }
-    .period-sep { font-size: 14px; color: #bbb; margin: 0 0px; }
-    .period-end-result {
-      display: flex; align-items: center; gap: 6px;
-      margin-top: 10px; padding: 8px 12px;
-      background: #fef6e8; border-radius: 6px;
-      font-size: 13px; color: #555;
-    }
-    .period-end-result strong { font-size: 14px; font-weight: 600; color: #333; }
-    .period-end-arrow { color: #999; }
-
-    /* 달력 */
-    .calendar-popup {
-      display: none; position: absolute; top: calc(100% + 4px); left: 0;
-      background: #fff; border: 1px solid #ddd; border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 14px; z-index: 100;
-      width: 280px; user-select: none;
-    }
-    .calendar-popup.open { display: block; }
-    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .cal-header span { font-size: 14px; font-weight: 600; color: #1a1a1a; }
-    .cal-nav {
-      width: 28px; height: 28px; border: none; background: none;
-      cursor: pointer; font-size: 16px; color: #888; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .cal-nav:hover { background: #f0f0f0; color: #333; }
-    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 4px; }
-    .cal-weekdays span { font-size: 11px; color: #aaa; padding: 4px 0; }
-    .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
-    .cal-day {
-      padding: 6px 0; font-size: 13px; cursor: pointer; border-radius: 50%;
-      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-      margin: 1px auto; color: #333;
-    }
-    .cal-day:hover { background: #fef6e8; }
-    .cal-day.today { background: #fef6e8; color: #f5a623; font-weight: 600; border: 1.5px solid #f5a623; }
-    .cal-day.today:hover { background: #fcecd0; }
-    .cal-day.selected { background: #f5a623; color: #fff; }
-    .cal-day.disabled { color: #ccc; cursor: not-allowed; pointer-events: none; }
-    .cal-day.disabled:hover { background: none; }
-    .cal-day.empty { cursor: default; }
-    .cal-day.empty:hover { background: none; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { font-size: 12px; font-weight: 500; color: #888; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e8e8e8; }
-    th.center { text-align: center; }
-    th.right { text-align: right; }
-    td { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #1a1a1a; vertical-align: middle; }
-    td.center { text-align: center; }
-    td.right { text-align: right; }
-    .product-name { font-weight: 500; font-size: 14px; }
-    .unit-price { font-size: 12px; color: #999; margin-top: 2px; }
-    .unit-price .original-price { text-decoration: line-through; color: #ccc; margin-right: 4px; }
-    .unit-price .discount-price { color: #d14; font-weight: 500; }
-    .discount-badge {
-      display: inline-block; font-size: 10px; color: #fff; background: #d14;
-      padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle;
-    }
-    input[type=number] {
-      width: 60px; padding: 6px 4px; font-size: 14px;
-      border: 1px solid #ddd; border-radius: 6px;
-      background: #fff; color: #1a1a1a; text-align: center;
-      outline: none; display: block; margin: 0 auto;
-    }
-    input[type=number]:focus { border-color: #aaa; }
-    .row-total { font-weight: 500; font-size: 14px; }
-    .divider-row td { border-top: 1.5px solid #ccc; border-bottom: none; padding-top: 14px; padding-bottom: 8px; }
-    .total-label { font-weight: 500; font-size: 15px; }
-    .total-amount { font-size: 20px; font-weight: 600; }
-    .btn-add-product {
-      display: block; width: 100%; padding: 10px; margin-top: 12px;
-      font-size: 14px; color: #f5a623; background: #fef6e8;
-      border: 1px dashed #f0d8a0; border-radius: 8px; cursor: pointer; text-align: center;
-    }
-    .btn-add-product:hover { background: #fcecd0; }
-    .product-select {
-      width: 100%; padding: 6px 8px; font-size: 14px;
-      border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #1a1a1a;
-      cursor: pointer; outline: none;
-    }
-    .product-select:focus { border-color: #f5a623; }
-    .btn-remove-product {
-      padding: 4px 8px; font-size: 12px; color: #d14; background: none;
-      border: 1px solid #f0d0d0; border-radius: 4px; cursor: pointer; white-space: nowrap;
-    }
-    .btn-remove-product:hover { background: #fef0f0; }
-    .btn-wrap { display: flex; gap: 10px; max-width: 680px; margin: 0 auto 20px; }
-    .btn-reset { flex: 1; padding: 10px; font-size: 14px; color: #888; background: #fff; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
-    .btn-reset:hover { background: #f5f5f5; }
-    .btn-pdf {
-      flex: 2; padding: 10px; font-family: 'Nanum Square Round', 'Pretendard', sans-serif;
-      font-size: 14px; font-weight: 800;
-      color: #fff; background: #f5a623; border: none; border-radius: 8px;
-      cursor: pointer; text-decoration: none; text-align: center;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .btn-pdf:hover { background: #e0911a; }
-
-    /* 페이지1 유효성 검사 메시지 */
-    .validation-msg {
-      display: none; text-align: center; font-size: 13px; color: #d14;
-      margin-bottom: 12px; padding: 8px; background: #fef0f0; border-radius: 6px;
-    }
-    .validation-msg.show { display: block; }
-
-    /* 학급 정보 섹션 */
-    .class-info-guide {
-      background: #eef2f7;
-      border-radius: 8px;
-      padding: 14px 16px;
-      font-size: 13px;
-      color: #4a5568;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-    .class-start-date { margin-bottom: 20px; }
-    .class-start-date label {
-      display: block; font-size: 14px; color: #555; margin-bottom: 6px; font-weight: 500;
-    }
-    .class-table-wrap {
-      border: 1px solid #e8e8e8; border-radius: 10px;
-      margin-bottom: 14px; position: relative;
-    }
-    .class-table { width: 100%; border-collapse: collapse; }
-    .class-table thead th {
-      font-size: 13px; font-weight: 600; color: #555; text-align: center;
-      padding: 10px 8px; background: #fafbfc; border-bottom: 1px solid #e8e8e8;
-    }
-    .class-table thead th:first-child { text-align: left; padding-left: 14px; }
-    .class-table thead th .th-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 4px;
-      font-size: 12px; font-weight: 600; color: #fff;
-    }
-    .class-table tbody td {
-      padding: 8px 6px; border-bottom: 1px solid #f0f0f0;
-      text-align: center; vertical-align: middle;
-    }
-    .class-table tbody td:first-child { text-align: left; padding-left: 10px; }
-    .class-table tbody td:last-child { text-align: center; width: 44px; }
-    .class-table tbody td input[type=text] {
-      width: 100%; min-width: 60px; padding: 6px 8px; font-size: 13px;
-      border: 1px solid #ddd; border-radius: 6px; outline: none;
-    }
-    .class-table tbody td input[type=text]:focus { border-color: #f5a623; }
-    .class-date-input { width: 90px !important; min-width: 90px !important; font-size: 12px !important; padding: 6px 6px !important; cursor: pointer; }
-    .class-table tbody td input[type=number] {
-      width: 52px; padding: 6px 4px; font-size: 13px; text-align: center;
-      border: 1px solid #ddd; border-radius: 6px; outline: none; margin: 0 auto;
-    }
-    .class-table tbody td input[type=number]:focus { border-color: #f5a623; }
-    .class-table tbody .btn-remove-class {
-      padding: 3px 6px; font-size: 11px; color: #d14; background: none;
-      border: 1px solid #f0d0d0; border-radius: 4px; cursor: pointer; white-space: nowrap;
-    }
-    .class-table tbody .btn-remove-class:hover { background: #fef0f0; }
-    .class-table-footer {
-      display: flex; align-items: center; justify-content: flex-end;
-      padding: 8px 14px; background: #fafbfc; border-top: 1px solid #e8e8e8;
-    }
-    .btn-add-class {
-      padding: 5px 12px; font-size: 13px; color: #f5a623; background: #fef6e8;
-      border: 1px solid #f0d8a0; border-radius: 6px; cursor: pointer;
-    }
-    .btn-add-class:hover { background: #fcecd0; }
-    .class-status-bar {
-      display: flex; flex-wrap: wrap; gap: 10px;
-      padding: 10px 14px; background: #fafbfc; border-top: 1px solid #e8e8e8;
-    }
-    .class-status-item {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 13px; color: #555;
-    }
-    .class-status-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 4px;
-      font-size: 12px; font-weight: 600; color: #fff;
-    }
-    .class-status-count { font-weight: 600; color: #333; }
-    .class-empty-msg {
-      text-align: center; padding: 28px 16px;
-      font-size: 14px; color: #999;
-    }
-    .class-conflict-msg {
-      display: none; padding: 10px 14px; margin: 0;
-      font-size: 12px; color: #d14; background: #fef0f0;
-      border-top: 1px solid #f0d0d0; text-align: center;
-    }
-    .class-conflict-msg.show { display: block; }
-
-    /* 구매방법 보기 */
-    .purchase-section {
-      max-width: 680px;
-      margin: 0 auto 20px;
-    }
-    .btn-purchase-guide {
-      display: block; width: 100%;
-      padding: 12px; font-size: 15px; font-weight: 500;
-      color: #f5a623; background: #fff;
-      border: 1.5px solid #f5a623; border-radius: 8px;
-      cursor: pointer; text-align: center;
-    }
-    .btn-purchase-guide:hover { background: #fef6e8; }
-    .purchase-guide-content {
-      display: none;
-      background: #fff;
-      border: 1px solid #e8e8e8;
-      border-radius: 0 0 12px 12px;
-      padding: 20px 24px;
-      margin-top: -1px;
-      font-size: 14px;
-      color: #333;
-      line-height: 1.8;
-    }
-    .purchase-guide-content.open { display: block; }
-
-    @media (max-width: 520px) {
-      .period-row { flex-direction: column; align-items: stretch; gap: 8px; }
-      .months-result { margin-left: 0; justify-content: center; }
-      .period-sep { display: none; }
-      .form-group .region-row { flex-direction: column; }
-      .form-group .region-row select { flex: unset; width: 100%; }
-    }
-  </style>
+/* 신규 구매 계산기 (camp 견적 계산기와 동일한 구성) */
+.period-section{border:1px dashed #ddd;border-radius:10px;padding:14px 16px;background:#fafbfc}
+.period-label{font-size:13px;color:#888;margin-bottom:10px}
+.period-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.date-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.date-group-label{font-size:13px;color:#777}
+.date-input-wrap{position:relative}
+input.date-input{width:140px;max-width:100%;cursor:pointer;min-height:36px;padding:7px 10px;font-size:14px}
+.period-end{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;background:#fef6e8;border-radius:6px;font-size:13px;color:#555}
+.period-end strong{font-size:15px;color:#333}
+.calc table{font-size:14px;min-width:540px}.calc .period-section table{min-width:0}
+.calc th{font-size:12px;font-weight:500;color:#888;background:none;padding:8px 10px;border-bottom:1px solid #e8e8e8}
+.calc td{padding:12px 10px;font-size:14px;border-bottom:1px solid #f0f0f0;vertical-align:middle;white-space:normal}
+.calc td input[type=number].mini{width:60px;padding:6px 4px;font-size:14px;text-align:center;display:block;margin:0 auto;min-height:34px}
+.calc select.ps{width:100%;padding:6px 8px;font-size:14px;min-height:36px}
+.up{font-size:12px;color:#999;margin-top:2px}.up s{color:#ccc;margin-right:4px}.up b{color:#d14;font-weight:500}
+.up .dc{display:inline-block;font-size:10px;color:#fff;background:#d14;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.rm{padding:4px 8px;font-size:12px;color:#d14;background:none;border:1px solid #f0d0d0;border-radius:4px;white-space:nowrap}
+.rm:hover{background:#fef0f0}
+.divider td{border-top:1.5px solid #ccc!important;border-bottom:none!important;padding-top:14px!important}
+.gtotal{font-size:20px;font-weight:600}
+.add-dash{display:block;width:100%;padding:10px;font-size:14px;color:#f5a623;background:#fef6e8;border:1px dashed #f0d8a0;border-radius:8px;text-align:center}
+.add-dash:hover{background:#fcecd0}
+.cw{border:1px solid #e8e8e8;border-radius:10px;position:relative}
+.cw .tblw{overflow-x:auto;overflow-y:visible}
+.ct th{font-size:13px;font-weight:600;color:#555;text-align:center;padding:10px 8px;background:#fafbfc}
+.ct th:first-child{text-align:left;padding-left:14px}
+.thb{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#fff}
+.ct td{padding:8px 6px;text-align:center;white-space:nowrap}
+.ct td:first-child{text-align:left;padding-left:10px}
+.ct td input[type=text]{min-width:90px;padding:6px 8px;font-size:13px;min-height:32px}
+.ct td input.cd{width:112px;font-size:12px;padding:6px;cursor:pointer;min-height:32px}
+.ct td input[type=number]{width:56px;padding:6px 4px;font-size:13px;text-align:center;min-height:32px;display:inline-block}
+.stbar{display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;background:#fafbfc;border-top:1px solid #e8e8e8}
+.sti{display:flex;align-items:center;gap:6px;font-size:13px;color:#555}.sti b{color:#333}
+.cfoot{display:flex;justify-content:flex-end;padding:8px 14px;background:#fafbfc;border-top:1px solid #e8e8e8;border-radius:0 0 10px 10px}
+.addc{padding:5px 12px;font-size:13px;color:#f5a623;background:#fef6e8;border:1px solid #f0d8a0;border-radius:6px}
+.conflict{display:none;padding:10px 14px;font-size:12px;color:#d14;background:#fef0f0;border-top:1px solid #f0d0d0;text-align:center}.conflict.show{display:block}
+.vmsg{display:none;text-align:center;font-size:13px;color:#d14;padding:8px;background:#fef0f0;border-radius:6px}.vmsg.show{display:block}
+.calendar-popup{position:fixed;background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:14px;z-index:60;width:280px;max-width:calc(100vw - 16px);user-select:none;text-align:left}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal-h span{font-size:14px;font-weight:600}
+.cal-nav{width:28px;height:28px;border:none;background:none;font-size:16px;color:#888;border-radius:6px}.cal-nav:hover{background:#f0f0f0}
+.cal-w,.cal-d{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}.cal-w span{font-size:11px;color:#aaa;padding:4px 0}
+.cal-day{font-size:13px;cursor:pointer;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;margin:1px auto}
+.cal-day:hover{background:#fef6e8}.cal-day.today{background:#fef6e8;color:#f5a623;font-weight:600;border:1.5px solid #f5a623}
+.cal-day.sel{background:#f5a623;color:#fff}.cal-day.dis{color:#ccc;pointer-events:none}.cal-day.emp{pointer-events:none}
+.cal-x{display:flex;gap:6px;padding:8px 0 0;border-top:1px solid #eee;margin-top:6px}
+.cal-x button{flex:1;padding:6px 0;border:1px solid #d0d0d0;border-radius:6px;background:#fff;font-size:12px;color:#555}
+.cal-x button.on{border-color:#f5a623;background:#fef6e8;color:#f5a623;font-weight:700}
+@media (max-width:560px){h1{font-size:19px}.card{padding:14px}.choice{min-width:100%}}
+@media print{body{background:#fff;padding:0}body>*:not(#qdoc){display:none!important}#qdoc{display:block!important;position:static!important;left:0!important}}
+</style>
 </head>
 <body>
+<div class="testbar">테스트 페이지입니다 · 샘플 데이터만 사용하며, 입력한 정보는 이 브라우저(localStorage)에만 저장되고 외부로 전송되지 않습니다.</div>
+<div class="wrap">
+<h1>토도 클래스룸 견적 확인하기</h1>
+<div class="steps" id="steps"></div>
 
-  <!-- ═══════ 페이지 1: 정보 입력 ═══════ -->
-  <div id="page1" class="page active">
-    <div class="page-title">토도 클래스룸 견적 확인하기</div>
-    <div class="calc-section">
-      <div class="form-group">
-        <label>지역</label>
-        <div class="region-row">
-          <select id="region-select" onchange="onRegionChange()">
-            <option value="">선택</option>
-            <option value="서울">서울</option>
-            <option value="경기">경기</option>
-            <option value="강원">강원</option>
-            <option value="울산">울산</option>
-            <option value="전남광주">전남광주</option>
-            <option value="경북">경북</option>
-            <option value="경남">경남</option>
-            <option value="전북">전북</option>
-            <option value="충북">충북</option>
-            <option value="충남">충남</option>
-            <option value="제주">제주</option>
-            <option value="__custom">직접 입력</option>
-          </select>
-          <input type="text" id="region-custom" placeholder="지역 입력" oninput="onRegionCustomInput()">
-        </div>
-      </div>
-      <div class="form-group" style="position:relative;">
-        <label>학교명</label>
-        <input type="text" id="school-name" placeholder="예: 토도초등학교" autocomplete="off" oninput="searchSchool(this.value)">
-        <div id="school-dropdown" class="school-dropdown"></div>
-      </div>
-      <div class="form-group">
-        <label>메일 주소</label>
-        <input type="email" id="user-email" placeholder="예: example@school.ac.kr">
-      </div>
-    </div>
-
-    <div class="consent-box">
-      <label class="consent-row">
-        <input type="checkbox" id="privacy-consent">
-        <span><b>[필수]</b> 견적 안내를 위한 개인정보 수집·이용에 동의해요.
-          <button type="button" class="consent-toggle" onclick="toggleConsentDetail(event)">내용 보기</button></span>
-      </label>
-      <div class="consent-detail" id="consent-detail">
-        [개인정보 수집·이용 동의]<br>
-        1. 수집 항목: 지역, 학교명, 이메일, 구매 목적, 휴대폰 번호<br>
-        2. 수집·이용 목적: 견적 안내 및 향후 제품 구매 안내<br>
-        3. 보유·이용 기간: 수집일로부터 1년 (목적 달성 시 지체 없이 파기)<br>
-        4. 동의를 거부하실 수 있으며, 거부 시 견적 확인이 제한됩니다.
-      </div>
-      <div class="validation-msg" id="validation-msg">모든 항목을 입력해 주세요.</div>
-      <button class="btn-consent" onclick="goToPage2()">견적 확인하기</button>
-    </div>
+<!-- ───── 1. 구성 ───── -->
+<div class="page" id="p1">
+ <div class="card">
+  <h2>학교/기관 정보</h2>
+  <div class="row" style="align-items:flex-start">
+   <div class="fg" style="width:150px"><label>지역</label>
+    <select id="region" onchange="onRegion()"><option value="">선택</option></select></div>
+   <div class="fg grow" style="position:relative"><label>학교/기관명</label>
+    <input type="text" id="school" placeholder="예: 가평초등학교" autocomplete="off" oninput="onSchoolInput()" onfocus="onSchoolInput()">
+    <div class="dd" id="dd"></div></div>
   </div>
-
-  <!-- ═══════ 울산 팝업 ═══════ -->
-  <div class="modal-overlay" id="ulsan-modal">
-    <div class="modal-box">
-      <div class="modal-icon">&#127891;</div>
-      <div class="modal-title">울산광역시교육청 업무 협약 안내</div>
-      <div class="modal-msg">울산광역시교육청과의 업무 협약에 따라<br>토도한글과 토도수학을 <b>협약 할인가</b>로 제공해 드립니다.</div>
-      <button class="modal-btn" onclick="closeUlsanModal()">확인</button>
-    </div>
+  <div class="info" id="agree"></div>
+  <div class="err" id="schoolErr"></div>
+ </div>
+ <div class="card">
+  <h2>어떤 견적이 필요하신가요?</h2>
+  <div class="row" style="align-items:stretch">
+   <button class="choice" id="tNew" onclick="setType('new')"><b>신규 구매</b>처음 구매하거나 새 학급을 만들 때</button>
+   <button class="choice" id="tEx" onclick="setType('exist')"><b>기존 학급 연장 · 추가</b>이용 중인 학급의 기간을 늘리거나 학생을 추가할 때</button>
   </div>
-
-  <!-- ═══════ 페이지 2: 견적 계산기 ═══════ -->
-  <div id="page2" class="page">
-    <div class="calc-section">
-      <h2>견적 계산기</h2>
-
-      <!-- 기간 계산 도우미 -->
-      <div class="period-section">
-        <div class="period-label">시작일과 기간을 입력하고 필요한 기간을 확인해 보세요.</div>
-        <div class="period-row">
-          <div class="date-group">
-            <span class="date-group-label">시작일</span>
-            <div class="date-input-wrap">
-              <input type="text" class="date-input" id="start-date" placeholder="연 / 월 / 일" readonly>
-              <div class="calendar-popup" id="start-cal"></div>
-            </div>
-          </div>
-          <div class="date-group">
-            <span class="date-group-label">이용 기간</span>
-            <div style="display:flex; align-items:center; gap:4px;">
-              <input type="number" id="period-months" min="1" value="" placeholder="0" style="width:60px; padding:7px 4px; font-size:14px; border:1px solid #ddd; border-radius:6px; text-align:center; outline:none;" oninput="recalcPeriod()">
-              <span style="font-size:13px; color:#666;">개월</span>
-            </div>
-          </div>
-        </div>
-        <div id="period-end-result" class="period-end-result" style="display:none;">
-          <span class="period-end-arrow">→</span>
-          <span>종료일 :</span>
-          <strong id="calc-end-date"></strong>
-        </div>
-      </div>
-
-      <table id="product-table">
-        <thead>
-          <tr>
-            <th style="width:30%">제품</th>
-            <th style="width:20%" class="center">이용 개월 수</th>
-            <th style="width:20%" class="center">학생 수</th>
-            <th style="width:22%" class="right">총액</th>
-            <th style="width:8%"></th>
-          </tr>
-        </thead>
-        <tbody id="product-rows"></tbody>
-        <tfoot>
-          <tr class="divider-row">
-            <td colspan="3" class="total-label">합계</td>
-            <td class="right"><span class="total-amount" id="grand-total">0원</span></td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-      <button class="btn-add-product" onclick="addProductRow()">+ 제품 추가</button>
-      <hr style="border:none; border-top:1px solid #e0e0e0; margin:24px 0 20px;">
-
-      <h3 style="font-family:'Nanum Square Round','Pretendard',sans-serif; font-size:16px; font-weight:800; color:#333; margin-bottom:8px;">학급 정보 입력</h3>
-      <p style="font-size:13px; color:#888; margin-bottom:14px;">아래의 정보를 입력해 주시면 보다 빠른 계정 발급이 가능합니다. 구매 수량에 맞게 인원 수를 입력해 주세요.</p>
-
-      <div id="class-cards-container">
-        <div class="class-empty-msg">위에서 제품을 추가하면 학급 배정 테이블이 표시됩니다.</div>
-      </div>
-
-      <div id="class-validation-msg" class="validation-msg" style="margin-top:12px;">모든 학생을 학급에 배정해 주세요.</div>
-    </div>
-
-    <div class="calc-section" style="margin-top:16px;">
-      <h3 style="font-family:'Nanum Square Round','Pretendard',sans-serif; font-size:16px; font-weight:800; color:#333; margin-bottom:12px;">견적서 발급</h3>
-      <div style="display:flex; gap:16px; margin-bottom:0;">
-        <div class="form-group" style="flex:1; margin-bottom:0;">
-          <label>구매 목적</label>
-          <input type="text" id="purchase-purpose" placeholder="ex) 기초학력, 특수, 다문화 ..">
-        </div>
-        <div class="form-group" style="flex:1; margin-bottom:0;">
-          <label>휴대폰</label>
-          <input type="tel" id="contact-phone" placeholder="010-0000-0000">
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-wrap">
-      <button class="btn-reset" onclick="resetCalc()">초기화</button>
-      <button class="btn-pdf" onclick="generatePDF()">견적서 PDF 다운로드</button>
-    </div>
-
-    <!-- ═══════ 구매방법 보기 ═══════ -->
-    <div class="purchase-section">
-      <a class="btn-purchase-guide" href="https://www.todoclassroom.com/enuma/contact-sales#2c5fc981-6e97-80ad-8a69-cc97d416d824" target="_blank" style="text-decoration:none; display:block;">구매방법 보기</a>
-    </div>
-  </div>
-
-  <!-- 숨겨진 견적서 템플릿 (PDF 생성용) -->
-  <div id="quote-doc" style="display:none; width:794px; padding:60px 60px 40px; background:#fff; font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:12px; color:#111;">
-    <div style="text-align:center; font-size:28px; font-weight:700; letter-spacing:12px; margin-bottom:32px;">견 적 서</div>
-    <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
-      <tr>
-        <td colspan="2" style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:120px;">견적일자</td>
-        <td style="border:1px solid #bbb; padding:7px 10px;" id="q-date"></td>
-      </tr>
-      <tr>
-        <td colspan="2" style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center;">공급받는자</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;" id="q-school"></td>
-      </tr>
-      <tr>
-        <td colspan="2" style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center;">구매 목적</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;" id="q-purpose"></td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:30px; writing-mode:vertical-rl;" rowspan="5">공급자</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:90px;">사업자 번호</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;">883-86-00976</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:90px;">상호명 / 대표자</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;">
-          <img id="q-logo" alt="TODO 로고" style="float:right; height:30px; width:auto; margin-left:12px;" src="todo_logo.png">
-          주식회사 에누마코리아 / 전유택
-        </td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:90px;">사업장 주소</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;">서울특별시 성동구 독섬로1나길 5, G301호</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:90px;">업태/업종</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;">서비스업, 소매업 / 소프트웨어개발 및 유통</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #bbb; padding:7px 10px; background:#f0f0f0; font-weight:600; text-align:center; width:90px;">문의</td>
-        <td style="border:1px solid #bbb; padding:7px 10px; text-align:center;">todoclassroom@enuma.com / 02-462-9720</td>
-      </tr>
-    </table>
-
-    <table style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:8%">번호</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:18%">상품명</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:13%">기간(개월)</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:13%">수량(명)</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:13%">단가(원)</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:13%">소계(원)</th>
-          <th style="background:#e8e8e8; border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; font-weight:600; width:22%">비고</th>
-        </tr>
-      </thead>
-      <tbody id="q-rows"></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="6" style="background:#d9d9d9; font-weight:700; font-size:13px; border:1px solid #bbb; padding:9px 6px; text-align:center;">총 합계 금액(vat 포함)</td>
-          <td id="q-grand-total" style="background:#d9d9d9; font-weight:700; font-size:13px; border:1px solid #bbb; padding:9px 6px; text-align:center;"></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <script>
-    const basePrices = [13500, 6500, 20000];
-    const ulsanPrices = [12150, 5800, 20000];
-    let prices = [...basePrices];
-    let ulsanShown = false;
-    let ulsanDiscount = false;
-
-    // ── 학교 검색 ──
-    var schoolSearchTimer = null;
-    function searchSchool(query) {
-      var dropdown = document.getElementById('school-dropdown');
-      clearTimeout(schoolSearchTimer);
-      if (query.length < 2) { dropdown.classList.remove('open'); return; }
-      schoolSearchTimer = setTimeout(function() {
-        var url = 'https://open.neis.go.kr/hub/schoolInfo?Type=json&pIndex=1&pSize=20&SCHUL_NM=' + encodeURIComponent(query);
-        fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-          if (!data.schoolInfo || !data.schoolInfo[1]) { dropdown.classList.remove('open'); return; }
-          var rows = data.schoolInfo[1].row;
-          var h = '';
-          rows.forEach(function(s) {
-            h += '<div class="school-item" onclick="selectSchool(\'' + s.SCHUL_NM.replace(/'/g, "\\'") + '\', \'' + s.LCTN_SC_NM.replace(/'/g, "\\'") + '\')">';
-            h += s.SCHUL_NM + '<span class="school-type">' + s.SCHUL_KND_SC_NM + '</span>';
-            h += '<span class="school-region">' + s.LCTN_SC_NM + '</span>';
-            h += '</div>';
-          });
-          dropdown.innerHTML = h;
-          dropdown.classList.add('open');
-        }).catch(function() { dropdown.classList.remove('open'); });
-      }, 300);
-    }
-
-    function selectSchool(name, region) {
-      document.getElementById('school-name').value = name;
-      document.getElementById('school-dropdown').classList.remove('open');
-      // 지역 자동 매핑
-      var regionMap = {
-        '서울특별시':'서울','경기도':'경기','강원특별자치도':'강원','강원도':'강원',
-        '울산광역시':'울산','전라남도':'전남광주','광주광역시':'전남광주',
-        '전남광주통합특별시':'전남광주',
-        '경상북도':'경북','경상남도':'경남','전라북도':'전북','전북특별자치도':'전북',
-        '충청북도':'충북','충청남도':'충남','제주특별자치도':'제주',
-        '부산광역시':'부산','대구광역시':'대구','인천광역시':'인천',
-        '대전광역시':'대전','세종특별자치시':'세종'
-      };
-      var r2 = region.replace(/\(.*\)/, '').trim();
-      var mapped = regionMap[region] || regionMap[r2];
-      var sel = document.getElementById('region-select');
-      var customInput = document.getElementById('region-custom');
-      if (mapped) {
-        var found = false;
-        for (var i = 0; i < sel.options.length; i++) {
-          if (sel.options[i].value === mapped) { sel.value = mapped; found = true; break; }
-        }
-        if (!found) {
-          sel.value = '__custom';
-          customInput.style.display = '';
-          customInput.value = mapped;
-        } else {
-          customInput.style.display = 'none';
-          customInput.value = '';
-        }
-      } else if (region) {
-        sel.value = '__custom';
-        customInput.style.display = '';
-        customInput.value = region;
-      }
-    }
-
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.form-group')) {
-        document.getElementById('school-dropdown').classList.remove('open');
-      }
-    });
-
-    // 페이지1에서 수집한 정보
-    let collectedRegion = '';
-    let collectedSchool = '';
-    let collectedEmail = '';
-
-    // ── 페이지 전환 ──
-    function goToPage2() {
-      var region = getRegion();
-      var school = document.getElementById('school-name').value.trim();
-      var email = document.getElementById('user-email').value.trim();
-      var msgEl = document.getElementById('validation-msg');
-
-      if (!region || !school || !email) {
-        msgEl.textContent = '모든 항목을 입력해 주세요.';
-        msgEl.classList.add('show');
-        return;
-      }
-      if (!document.getElementById('privacy-consent').checked) {
-        msgEl.textContent = '개인정보 수집·이용에 동의해 주세요.';
-        msgEl.classList.add('show');
-        return;
-      }
-      msgEl.classList.remove('show');
-
-      collectedRegion = region;
-      collectedSchool = school;
-      collectedEmail = email;
-
-      document.getElementById('page1').classList.remove('active');
-      document.getElementById('page2').classList.add('active');
-
-      if (region === '울산' && !ulsanShown) {
-        ulsanShown = true;
-        document.getElementById('ulsan-modal').classList.add('open');
-      }
-    }
-
-    function toggleConsentDetail(e) {
-      e.preventDefault(); // label 안이라 체크박스가 같이 토글되지 않게
-      var detail = document.getElementById('consent-detail');
-      var open = detail.classList.toggle('open');
-      e.target.textContent = open ? '접기' : '내용 보기';
-    }
-
-    // ── 지역 선택 ──
-    function getRegion() {
-      var sel = document.getElementById('region-select');
-      if (sel.value === '__custom') {
-        return document.getElementById('region-custom').value.trim();
-      }
-      return sel.value;
-    }
-
-    function onRegionChange() {
-      var sel = document.getElementById('region-select');
-      var customInput = document.getElementById('region-custom');
-      if (sel.value === '__custom') {
-        customInput.style.display = '';
-        customInput.focus();
-      } else {
-        customInput.style.display = 'none';
-        customInput.value = '';
-      }
-    }
-
-    function onRegionCustomInput() {}
-
-    function closeUlsanModal() {
-      document.getElementById('ulsan-modal').classList.remove('open');
-      applyUlsanDiscount(true);
-    }
-
-    function applyUlsanDiscount(on) {
-      ulsanDiscount = on;
-      prices = on ? [...ulsanPrices] : [...basePrices];
-      updateAllPriceDisplays();
-      calc();
-    }
-
-    function getProductPrice(idx) {
-      return prices[idx];
-    }
-
-    function getPriceLabel(idx) {
-      if (ulsanDiscount && basePrices[idx] !== ulsanPrices[idx]) {
-        return '<span class="original-price">월 ' + basePrices[idx].toLocaleString() + '원/명</span>'
-          + '<span class="discount-price">월 ' + ulsanPrices[idx].toLocaleString() + '원/명</span>'
-          + '<span class="discount-badge">협약가</span>';
-      }
-      return '월 ' + basePrices[idx].toLocaleString() + '원/명';
-    }
-
-    function updateAllPriceDisplays() {
-      var rows = document.getElementById('product-rows').querySelectorAll('tr');
-      rows.forEach(function(row) {
-        var sel = row.querySelector('.product-select');
-        if (!sel) return;
-        var idx = parseInt(sel.value);
-        var priceEl = row.querySelector('.unit-price');
-        if (priceEl) priceEl.innerHTML = getPriceLabel(idx);
-      });
-    }
-
-    // ── 날짜 상태 ──
-    var startDate = null;
-    var endDate = null;
-
-    // ── 달력 렌더링 ──
-    function renderDayCalendar(containerId, selectedDateFn, onSelect) {
-      var container = document.getElementById(containerId);
-      var today = new Date();
-      var sel = selectedDateFn();
-      var isDateObj = sel && typeof sel === 'object' && sel.year;
-      var vYear = isDateObj ? sel.year : today.getFullYear();
-      var vMonth = isDateObj ? sel.month : today.getMonth();
-
-      function draw() {
-        var first = new Date(vYear, vMonth, 1).getDay();
-        var days = new Date(vYear, vMonth + 1, 0).getDate();
-        var isToday = function(d) { return today.getFullYear() === vYear && today.getMonth() === vMonth && today.getDate() === d; };
-        var cur = selectedDateFn();
-        var isSelected = function(d) { return cur && cur.year === vYear && cur.month === vMonth && cur.day === d; };
-        var isPast = function(d) {
-          var check = new Date(vYear, vMonth, d);
-          var todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          return check < todayMid;
-        };
-
-        var h = '<div class="cal-header">';
-        h += '<button class="cal-nav" id="' + containerId + '-prev">&lsaquo;</button>';
-        h += '<span>' + vYear + '년 ' + (vMonth + 1) + '월</span>';
-        h += '<button class="cal-nav" id="' + containerId + '-next">&rsaquo;</button>';
-        h += '</div>';
-        h += '<div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>';
-        h += '<div class="cal-days">';
-        for (var i = 0; i < first; i++) h += '<div class="cal-day empty"></div>';
-        for (var d = 1; d <= days; d++) {
-          var cls = 'cal-day';
-          if (isPast(d)) cls += ' disabled';
-          if (isToday(d)) cls += ' today';
-          if (isSelected(d)) cls += ' selected';
-          h += '<div class="' + cls + '" data-d="' + d + '">' + d + '</div>';
-        }
-        h += '</div>';
-        container.innerHTML = h;
-
-        document.getElementById(containerId + '-prev').addEventListener('click', function(e) {
-          e.stopPropagation();
-          vMonth--;
-          if (vMonth < 0) { vMonth = 11; vYear--; }
-          draw();
-        });
-        document.getElementById(containerId + '-next').addEventListener('click', function(e) {
-          e.stopPropagation();
-          vMonth++;
-          if (vMonth > 11) { vMonth = 0; vYear++; }
-          draw();
-        });
-        container.querySelectorAll('.cal-day:not(.empty):not(.disabled)').forEach(function(el) {
-          el.addEventListener('click', function(e) {
-            e.stopPropagation();
-            onSelect(vYear, vMonth, parseInt(el.dataset.d));
-            container.classList.remove('open');
-          });
-        });
-      }
-      draw();
-      container.classList.add('open');
-    }
-
-    // ── 기간 달력 이벤트 ──
-    document.getElementById('start-date').addEventListener('click', function(e) {
-      e.stopPropagation();
-      document.querySelectorAll('.class-row-cal').forEach(function(c) { c.classList.remove('open'); });
-      renderDayCalendar('start-cal', function() { return startDate; }, function(y, m, d) {
-        startDate = { year: y, month: m, day: d };
-        document.getElementById('start-date').value = y + '년 ' + (m + 1) + '월 ' + d + '일';
-        recalcPeriod();
-      });
-    });
-
-    document.addEventListener('click', function() {
-      document.getElementById('start-cal').classList.remove('open');
-      document.querySelectorAll('.class-row-cal').forEach(function(cal) { cal.classList.remove('open'); });
-    });
-
-    document.getElementById('start-cal').addEventListener('click', function(e) { e.stopPropagation(); });
-
-    // ── 종료일 계산 (시작일 + N개월) ──
-    function recalcPeriod() {
-      var months = parseInt(document.getElementById('period-months').value) || 0;
-      var resultEl = document.getElementById('period-end-result');
-
-      if (!startDate || months <= 0) {
-        resultEl.style.display = 'none';
-        endDate = null;
-        return;
-      }
-
-      var d = new Date(startDate.year, startDate.month + months, startDate.day);
-      endDate = { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
-      document.getElementById('calc-end-date').textContent =
-        d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
-      resultEl.style.display = 'flex';
-    }
-
-    // ── 제품 행 추가/삭제 ──
-    var productNames = ['토도한글', '토도수학', '토도영어'];
-    var productShortNames = ['한글', '수학', '영어'];
-    var productColors = ['#5ab86a', '#4a90d9', '#e8729a'];
-    var rowIdCounter = 0;
-
-    function addProductRow(presetIdx) {
-      var tbody = document.getElementById('product-rows');
-      var tr = document.createElement('tr');
-      tr.setAttribute('data-row-id', ++rowIdCounter);
-      var selIdx = (presetIdx !== undefined) ? presetIdx : 0;
-      var options = '';
-      for (var i = 0; i < productNames.length; i++) {
-        options += '<option value="' + i + '"' + (i === selIdx ? ' selected' : '') + '>' + productNames[i] + '</option>';
-      }
-      tr.innerHTML = '<td>'
-        + '<select class="product-select" onchange="onProductSelect(this)">' + options + '</select>'
-        + '<div class="unit-price">' + getPriceLabel(selIdx) + '</div>'
-        + '</td>'
-        + '<td class="center"><input type="number" class="row-months" min="1" value="1" oninput="onMonthsChange(this)"></td>'
-        + '<td class="center"><input type="number" class="row-students" min="0" value="1" oninput="calc()"></td>'
-        + '<td class="right"><span class="row-total">0원</span></td>'
-        + '<td style="text-align:center;"><button class="btn-remove-product" onclick="removeProductRow(this)">삭제</button></td>';
-      tbody.appendChild(tr);
-      calc();
-      syncClassCards();
-    }
-
-    function removeProductRow(btn) {
-      btn.closest('tr').remove();
-      calc();
-      syncClassCards();
-    }
-
-    function hasDuplicateProduct(checkTr) {
-      var idx = parseInt(checkTr.querySelector('.product-select').value);
-      var m = parseInt(checkTr.querySelector('.row-months').value) || 0;
-      var found = false;
-      getProductRows().forEach(function(row) {
-        if (row === checkTr) return;
-        var rIdx = parseInt(row.querySelector('.product-select').value);
-        var rM = parseInt(row.querySelector('.row-months').value) || 0;
-        if (rIdx === idx && rM === m) found = true;
-      });
-      return found;
-    }
-
-    function highlightDuplicates() {
-      var rows = getProductRows();
-      var seen = {};
-      rows.forEach(function(row) {
-        var idx = parseInt(row.querySelector('.product-select').value);
-        var m = parseInt(row.querySelector('.row-months').value) || 0;
-        var key = idx + '_' + m;
-        if (!seen[key]) seen[key] = [];
-        seen[key].push(row);
-      });
-      rows.forEach(function(row) {
-        row.querySelector('.row-months').style.color = '';
-        row.querySelector('.row-months').style.borderColor = '';
-      });
-      Object.keys(seen).forEach(function(key) {
-        if (seen[key].length > 1) {
-          seen[key].forEach(function(row) {
-            row.querySelector('.row-months').style.color = '#d14';
-            row.querySelector('.row-months').style.borderColor = '#d14';
-          });
-        }
-      });
-    }
-
-    function onProductSelect(sel) {
-      var tr = sel.closest('tr');
-      var idx = parseInt(sel.value);
-      tr.querySelector('.unit-price').innerHTML = getPriceLabel(idx);
-      calc();
-      syncClassCards();
-    }
-
-    function onMonthsChange(input) {
-      calc();
-    }
-
-    // ── 계산 로직 ──
-    function fmt(n) { return n.toLocaleString('ko-KR') + '원'; }
-
-    function getProductRows() {
-      return document.getElementById('product-rows').querySelectorAll('tr');
-    }
-
-    function calc() {
-      var grand = 0;
-      getProductRows().forEach(function(row) {
-        var idx = parseInt(row.querySelector('.product-select').value);
-        var m = parseInt(row.querySelector('.row-months').value) || 0;
-        var s = parseInt(row.querySelector('.row-students').value) || 0;
-        var t = getProductPrice(idx) * m * s;
-        grand += t;
-        row.querySelector('.row-total').textContent = fmt(t);
-      });
-      document.getElementById('grand-total').textContent = fmt(grand);
-      highlightDuplicates();
-      syncClassCards();
-    }
-
-    // ── 학급 테이블 시스템 ──
-    var classRows = [];
-    var classRowIdCounter = 0;
-
-    // colKey = "제품idx_개월수" (e.g. "0_3" = 한글 3개월)
-    function getColumnDefs() {
-      var seen = {};
-      var cols = [];
-      var productMonthCount = {};
-      getProductRows().forEach(function(row) {
-        var idx = parseInt(row.querySelector('.product-select').value);
-        var m = parseInt(row.querySelector('.row-months').value) || 0;
-        var key = idx + '_' + m;
-        if (!seen[key]) {
-          seen[key] = { idx: idx, months: m, key: key, purchased: 0 };
-          cols.push(seen[key]);
-          if (!productMonthCount[idx]) productMonthCount[idx] = new Set();
-          productMonthCount[idx].add(m);
-        }
-        seen[key].purchased += parseInt(row.querySelector('.row-students').value) || 0;
-      });
-      cols.sort(function(a, b) { return a.idx !== b.idx ? a.idx - b.idx : a.months - b.months; });
-      cols.forEach(function(col) {
-        col.showMonths = productMonthCount[col.idx].size > 1;
-      });
-      return cols;
-    }
-
-    function colLabel(col) {
-      return col.showMonths ? (productShortNames[col.idx] + ' ' + col.months + '개월') : productShortNames[col.idx];
-    }
-
-    function syncClassCards() {
-      var container = document.getElementById('class-cards-container');
-      var cols = getColumnDefs();
-
-      if (cols.length === 0) {
-        container.innerHTML = '<div class="class-empty-msg">위에서 제품을 추가하면 학급 배정 테이블이 표시됩니다.</div>';
-        classRows = [];
-        return;
-      }
-
-      if (classRows.length === 0) {
-        classRows.push({ id: ++classRowIdCounter, name: '', counts: {}, startDate: null });
-      }
-
-      var h = '<div class="class-table-wrap">';
-      h += '<table class="class-table"><thead><tr>';
-      h += '<th style="min-width:90px">학급명</th>';
-      h += '<th style="min-width:110px">사용 시작일</th>';
-      cols.forEach(function(col) {
-        h += '<th><span class="th-badge" style="background:' + productColors[col.idx] + '">' + colLabel(col) + '</span></th>';
-      });
-      h += '<th style="width:44px"></th>';
-      h += '</tr></thead><tbody>';
-
-      classRows.forEach(function(cr) {
-        var dateVal = '';
-        if (cr.startDate === 'undecided') dateVal = '미정';
-        else if (cr.startDate === 'renewal') dateVal = '기존 계정 연장';
-        else if (cr.startDate && typeof cr.startDate === 'object') dateVal = cr.startDate.year + '.' + (cr.startDate.month + 1) + '.' + cr.startDate.day;
-        h += '<tr data-class-row-id="' + cr.id + '">';
-        var classIdx = classRows.indexOf(cr);
-        var defaultName = (classIdx + 1) + '학년 1반';
-        h += '<td><input type="text" placeholder="예: ' + defaultName + '" value="' + (cr.name || '') + '" onchange="onClassTableNameChange(this)"></td>';
-        h += '<td><div class="date-input-wrap"><input type="text" class="date-input class-date-input" placeholder="연/월/일" value="' + dateVal + '" readonly onclick="openClassRowCal(this, event)"><div class="calendar-popup class-row-cal"></div></div></td>';
-        cols.forEach(function(col) {
-          var val = cr.counts[col.key] || '';
-          h += '<td><input type="number" min="0" value="' + val + '" placeholder="0" data-col-key="' + col.key + '" data-pidx="' + col.idx + '" data-months="' + col.months + '" oninput="onClassTableCountInput(this)"> <span style="font-size:12px;color:#888;">명</span></td>';
-        });
-        h += '<td><button class="btn-remove-class" onclick="removeClassTableRow(this)">삭제</button></td>';
-        h += '</tr>';
-      });
-
-      h += '</tbody></table>';
-      h += '<div class="class-conflict-msg" id="class-conflict-msg">한 학급에 이용 기간이 다른 프로필을 배치할 수 없습니다. 다른 학급에 배정해 주세요.</div>';
-      h += '<div class="class-status-bar" id="class-status-bar">';
-      h += buildStatusBar(cols);
-      h += '</div>';
-      h += '<div class="class-table-footer">';
-      h += '<button class="btn-add-class" onclick="addClassTableRow()">+ 학급 추가</button>';
-      h += '</div>';
-      h += '</div>';
-
-      container.innerHTML = h;
-    }
-
-    function openClassRowCal(inputEl, evt) {
-      (evt || window.event).stopPropagation();
-      document.querySelectorAll('.class-row-cal').forEach(function(c) { c.classList.remove('open'); });
-      document.getElementById('start-cal').classList.remove('open');
-
-      var tr = inputEl.closest('tr');
-      var rid = parseInt(tr.getAttribute('data-class-row-id'));
-      var cr = classRows.find(function(r) { return r.id === rid; });
-      var calEl = inputEl.parentElement.querySelector('.class-row-cal');
-      var calId = 'class-row-cal-' + rid;
-      calEl.id = calId;
-
-      calEl.addEventListener('click', function(e) { e.stopPropagation(); });
-
-      renderDayCalendar(calId, function() { return cr ? cr.startDate : null; }, function(y, m, d) {
-        if (cr) cr.startDate = { year: y, month: m, day: d };
-        inputEl.value = y + '.' + (m + 1) + '.' + d;
-      });
-
-      var btnWrap = document.createElement('div');
-      btnWrap.style.cssText = 'display:flex; gap:6px; padding:4px 10px 8px; border-top:1px solid #eee; margin-top:4px;';
-      var btnStyle = 'flex:1; padding:6px 0; border:1px solid #d0d0d0; border-radius:6px; background:#fff; font-size:12px; color:#555; cursor:pointer; text-align:center;';
-      var selStyle = 'flex:1; padding:6px 0; border:1px solid #f5a623; border-radius:6px; background:#fef6e8; font-size:12px; color:#f5a623; cursor:pointer; text-align:center; font-weight:700;';
-
-      var isUndecided = cr && cr.startDate === 'undecided';
-      var isRenewal = cr && cr.startDate === 'renewal';
-
-      btnWrap.innerHTML = '<button style="' + (isUndecided ? selStyle : btnStyle) + '" data-action="undecided">미정</button>'
-        + '<button style="' + (isRenewal ? selStyle : btnStyle) + '" data-action="renewal">기존 계정 연장</button>';
-      calEl.appendChild(btnWrap);
-
-      btnWrap.querySelector('[data-action="undecided"]').addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (cr) cr.startDate = 'undecided';
-        inputEl.value = '미정';
-        calEl.classList.remove('open');
-      });
-      btnWrap.querySelector('[data-action="renewal"]').addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (cr) cr.startDate = 'renewal';
-        inputEl.value = '기존 계정 연장';
-        calEl.classList.remove('open');
-      });
-    }
-
-    function buildStatusBar(cols) {
-      var h = '';
-      cols.forEach(function(col) {
-        var assigned = 0;
-        classRows.forEach(function(cr) { assigned += parseInt(cr.counts[col.key]) || 0; });
-        h += '<div class="class-status-item">';
-        h += '<span class="class-status-badge" style="background:' + productColors[col.idx] + '">' + colLabel(col) + '</span>';
-        h += '<span class="class-status-count">' + assigned + '/' + col.purchased + '명</span>';
-        h += '</div>';
-      });
-      return h;
-    }
-
-    function addClassTableRow() {
-      classRows.push({ id: ++classRowIdCounter, name: '', counts: {}, startDate: null });
-      syncClassCards();
-    }
-
-    function removeClassTableRow(btn) {
-      if (classRows.length <= 1) return;
-      var tr = btn.closest('tr');
-      var rid = parseInt(tr.getAttribute('data-class-row-id'));
-      classRows = classRows.filter(function(cr) { return cr.id !== rid; });
-      syncClassCards();
-    }
-
-    function onClassTableNameChange(el) {
-      var tr = el.closest('tr');
-      var rid = parseInt(tr.getAttribute('data-class-row-id'));
-      var cr = classRows.find(function(r) { return r.id === rid; });
-      if (cr) cr.name = el.value;
-    }
-
-    function onClassTableCountInput(el) {
-      var tr = el.closest('tr');
-      var rid = parseInt(tr.getAttribute('data-class-row-id'));
-      var colKey = el.getAttribute('data-col-key');
-      var pidx = parseInt(el.getAttribute('data-pidx'));
-      var months = parseInt(el.getAttribute('data-months'));
-      var cr = classRows.find(function(r) { return r.id === rid; });
-      if (!cr) return;
-
-      var cols = getColumnDefs();
-      var col = cols.find(function(c) { return c.key === colKey; });
-      if (!col) return;
-
-      var conflictMsg = document.getElementById('class-conflict-msg');
-      var val = parseInt(el.value) || 0;
-
-      if (val > 0) {
-        var hasConflict = false;
-        cols.forEach(function(otherCol) {
-          if (otherCol.idx === pidx && otherCol.months !== months) {
-            if ((parseInt(cr.counts[otherCol.key]) || 0) > 0) {
-              hasConflict = true;
-            }
-          }
-        });
-        if (hasConflict) {
-          el.value = '';
-          cr.counts[colKey] = 0;
-          if (conflictMsg) conflictMsg.classList.add('show');
-          setTimeout(function() { if (conflictMsg) conflictMsg.classList.remove('show'); }, 4000);
-          return;
-        }
-      }
-
-      var othersTotal = 0;
-      classRows.forEach(function(r) {
-        if (r.id !== rid) othersTotal += parseInt(r.counts[colKey]) || 0;
-      });
-      var max = col.purchased - othersTotal;
-      if (max < 0) max = 0;
-      if (val > max) { el.value = max; val = max; }
-      cr.counts[colKey] = val;
-
-      if (conflictMsg) conflictMsg.classList.remove('show');
-      var statusBar = document.getElementById('class-status-bar');
-      if (statusBar) statusBar.innerHTML = buildStatusBar(cols);
-    }
-
-    // ── 구매방법 토글 ──
-    function togglePurchaseGuide() {
-      var content = document.getElementById('purchase-guide-content');
-      content.classList.toggle('open');
-    }
-
-    // ── PDF 생성 ──
-    function generatePDF() {
-      var school = collectedRegion ? (collectedRegion + ' ' + collectedSchool).trim() : collectedSchool;
-      if (!school) { alert('학교 정보가 없습니다. 처음부터 다시 진행해 주세요.'); return; }
-
-      var classMsgEl = document.getElementById('class-validation-msg');
-      var cols = getColumnDefs();
-      if (cols.length > 0 && classRows.length > 0) {
-        var allAssigned = true;
-        cols.forEach(function(col) {
-          var assigned = 0;
-          classRows.forEach(function(r) { assigned += parseInt(r.counts[col.key]) || 0; });
-          if (assigned !== col.purchased) allAssigned = false;
-        });
-        if (!allAssigned) {
-          if (classMsgEl) {
-            classMsgEl.textContent = '모든 학생을 학급에 배정해 주세요.';
-            classMsgEl.classList.add('show');
-          }
-          document.getElementById('class-cards-container').scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
-
-        var hasEmptyInfo = false;
-        classRows.forEach(function(r) {
-          if (!r.name || !r.startDate) hasEmptyInfo = true;
-        });
-        if (hasEmptyInfo) {
-          if (classMsgEl) {
-            classMsgEl.textContent = '학급명과 사용 시작일을 입력해 주세요.';
-            classMsgEl.classList.add('show');
-          }
-          document.getElementById('class-cards-container').scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
-      }
-      if (classMsgEl) classMsgEl.classList.remove('show');
-
-      function fmtQ(n) { return n.toLocaleString('ko-KR'); }
-
-      var d = new Date();
-      document.getElementById('q-date').textContent = d.getFullYear() + '. ' + (d.getMonth()+1) + '. ' + d.getDate() + '.';
-      document.getElementById('q-school').textContent = school + '    귀하';
-      document.getElementById('q-purpose').textContent = document.getElementById('purchase-purpose').value || '';
-
-      var items = [];
-      var usedShortSet = {};
-      getProductRows().forEach(function(row) {
-        var idx = parseInt(row.querySelector('.product-select').value);
-        var m = parseInt(row.querySelector('.row-months').value) || 0;
-        var s = parseInt(row.querySelector('.row-students').value) || 0;
-        var p = getProductPrice(idx);
-        var t = p * m * s;
-        if (m > 0 || s > 0) {
-          items.push({ name: productNames[idx], shortName: productShortNames[idx], months: m, students: s, price: p, total: t });
-          usedShortSet[productShortNames[idx]] = true;
-        }
-      });
-
-      var rows = '', rowNum = 1, grand = 0;
-      var tdStyle = 'border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px; vertical-align:middle;';
-      for (var i = 0; i < items.length; i++) {
-        var it = items[i];
-        grand += it.total;
-        rows += '<tr>';
-        rows += '<td style="' + tdStyle + '">' + rowNum++ + '</td>';
-        rows += '<td style="' + tdStyle + '">' + it.name + '</td>';
-        rows += '<td style="' + tdStyle + '">' + it.months + '</td>';
-        rows += '<td style="' + tdStyle + '">' + it.students + '</td>';
-        rows += '<td style="' + tdStyle + '">' + fmtQ(it.price) + '</td>';
-        rows += '<td style="' + tdStyle + 'text-align:right;">' + fmtQ(it.total) + '</td>';
-        rows += '<td style="' + tdStyle + 'text-align:left; font-size:11px;"></td>';
-        rows += '</tr>';
-      }
-      var tdS2 = 'border:1px solid #bbb; padding:7px 6px; text-align:center; font-size:12px;';
-      rows += '<tr><td style="' + tdS2 + '"></td><td style="' + tdS2 + '"></td><td style="' + tdS2 + '"></td><td style="' + tdS2 + '"></td><td style="' + tdS2 + '"></td><td style="' + tdS2 + 'color:#555;">이하 여백</td><td style="' + tdS2 + '"></td></tr>';
-      document.getElementById('q-rows').innerHTML = rows;
-      document.getElementById('q-grand-total').textContent = fmtQ(grand) + '원';
-
-      var usedProducts = Object.keys(usedShortSet);
-      var productStr = usedProducts.length > 0 ? '토도' + usedProducts.join(',') : '토도';
-      var dateStr = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2);
-      var fileName = productStr + '_' + school + '_' + dateStr + '.pdf';
-
-      var el = document.getElementById('quote-doc');
-      el.style.cssText = 'display:block; position:absolute; left:-9999px; top:0;';
-
-      html2pdf().set({
-        margin: 0,
-        filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true },
-        jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
-      }).from(el).save().then(function() {
-        el.style.cssText = 'display:none;';
-      }).catch(function() {
-        el.style.cssText = 'display:none;';
-        alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
-      });
-    }
-
-    function resetCalc() {
-      document.getElementById('product-rows').innerHTML = '';
-      document.getElementById('grand-total').textContent = '0원';
-      document.getElementById('start-date').value = '';
-      document.getElementById('period-months').value = '';
-      document.getElementById('period-end-result').style.display = 'none';
-      startDate = null;
-      endDate = null;
-      if (ulsanDiscount) applyUlsanDiscount(false);
-      syncClassCards();
-    }
-  </script>
+ </div>
+ <div id="secNew" style="display:none"></div>
+ <div id="secEx" style="display:none"></div>
+</div>
+
+<!-- ───── 2. 견적 내역 ───── -->
+<div class="page" id="p2"></div>
+<!-- ───── 3. 구매 방법 ───── -->
+<div class="page" id="p3"></div>
+<!-- ───── 4. 견적서 발급 ───── -->
+<div class="page" id="p4"></div>
+<!-- ───── 5. 완료 ───── -->
+<div class="page" id="p5"></div>
+</div>
+
+<div class="fbar" id="fbar"><div class="in"><div id="fsum" class="sub" style="font-size:14px;color:#333"></div><button class="btn o" id="fgo" onclick="go(2)">견적 내역 확인 →</button></div></div>
+<div class="toast" id="toast"></div>
+<div id="qdoc"></div>
+
+<script>
+/* ───────── 샘플 데이터 (실서비스에서는 AC·LMS·통합 DB에서 조회) ───────── */
+var PRODUCTS=[{name:'토도한글',short:'한글',code:'202501230494184',edu:'202608109209764',base:13500,ulsan:12150},
+              {name:'토도수학',short:'수학',code:'202308247014759',edu:'202605078244765',base:6500,ulsan:5800},
+              {name:'토도영어',short:'영어',code:'202308247014874',edu:'202608039167697',base:20000,ulsan:20000}];
+var REGIONS=['서울','경기','강원','울산','전남광주','경북','경남','전북','충북','충남','제주'];
+var SCHOOLS=[['서울','서울토도초등학교'],['서울','서울한빛초등학교'],['경기','경기가평초등학교'],['경기','경기수원토도초등학교'],['경기','경기용인푸른초등학교'],
+ ['강원','강원춘천초등학교'],['울산','울산태화초등학교'],['울산','울산무거초등학교'],['전남광주','광주빛고을초등학교'],['경북','경북포항초등학교'],
+ ['경남','경남창원초등학교'],['전북','전북전주초등학교'],['충북','충북청주초등학교'],['충남','충남천안초등학교'],['제주','제주한라초등학교']];
+var ORGS={ // 기관 코드 → 기관/학급 (사용 인원, 이용 시작·종료일)
+ 'GP1234':{name:'경기가평초등학교',classes:[
+  {id:'c1',name:'3학년 1반',subj:{0:{n:25,s:'2026-03-01',e:'2027-02-28'},1:{n:25,s:'2026-03-01',e:'2027-02-28'}}},
+  {id:'c2',name:'3학년 2반',subj:{0:{n:10,s:'2026-03-01',e:'2027-02-28'},1:{n:10,s:'2026-03-01',e:'2027-02-28'}}},
+  {id:'c3',name:'4학년 1반',subj:{0:{n:20,s:'2026-03-01',e:'2027-02-28'}}},
+  {id:'c4',name:'특수학급',subj:{0:{n:5,s:'2025-09-01',e:'2026-08-31'},1:{n:5,s:'2026-03-01',e:'2027-02-28'}}}]},
+ 'UL5678':{name:'울산태화초등학교',classes:[
+  {id:'u1',name:'5학년 1반',subj:{0:{n:22,s:'2026-02-01',e:'2027-01-31'},1:{n:22,s:'2026-02-01',e:'2027-01-31'},2:{n:22,s:'2026-04-01',e:'2027-03-31'}}},
+  {id:'u2',name:'5학년 2반',subj:{1:{n:21,s:'2026-02-01',e:'2027-01-31'}}}]}};
+var BUDGET_TIMES=['선택 안 함','9:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
+var LS_Q='todoQuoteTest.quotes',LS_SEQ='todoQuoteTest.seq';
+
+/* ───────── 유틸 ───────── */
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function won(n){return Number(n).toLocaleString('ko-KR')+'원'}
+function p2(n){return n<10?'0'+n:''+n}
+function iso(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function dot(s){return s.replace(/-/g,'.')}
+function parse(s){var a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function today(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function dayAfter(s){var d=parse(s);d.setDate(d.getDate()+1);return iso(d)}
+function endOf(start,months){ // 시작일 + N개월 − 1일
+ var a=start.split('-').map(Number);var last=new Date(a[0],a[1]-1+months+1,0).getDate();
+ var d=new Date(a[0],a[1]-1+months,Math.min(a[2],last));d.setDate(d.getDate()-1);return iso(d);}
+function remMonths(end){var days=(parse(end)-today())/86400000;return days<0?0:Math.ceil(days/30.4375)}
+function mask(n){n=String(n).trim();return n?n.charAt(0)+'○'.repeat(Math.max(1,n.length-1)):''}
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('show')},2200)}
+function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function price(pi){return S.region==='울산'?PRODUCTS[pi].ulsan:PRODUCTS[pi].base}
+function priceLabel(pi){var p=PRODUCTS[pi];if(S.region==='울산'&&p.base!==p.ulsan)return '<s style="color:#bbb">월 '+p.base.toLocaleString()+'원</s> <b style="color:#d14">월 '+p.ulsan.toLocaleString()+'원/명</b> <span class="tg o">협약가</span>';return '월 '+p.base.toLocaleString()+'원/명'}
+function badge(pi){return '<span class="bd2 p'+pi+'">'+PRODUCTS[pi].name+'</span>'}
+
+/* ───────── 상태 ───────── */
+var S={step:1,region:'',school:'',type:'',cart:[],org:null,orgCode:'',orgErr:'',cls:null,open:null,draft:null,
+       nw:null,purchase:'미정',quote:null,seq:0};
+function newForm(){return{start:null,months:'',rows:[{pi:0,months:1,students:1}],classes:[{id:1,name:'',start:null,counts:{}}],cid:1}}
+S.nw=newForm();
+
+/* ───────── 단계 이동 ───────── */
+var STEPN=['① 견적 구성','② 견적 내역','③ 구매 방법','④ 견적서 발급','⑤ 완료'];
+function go(n){S.step=n;for(var i=1;i<=5;i++)$('p'+i).classList.toggle('active',i===n);
+ $('steps').innerHTML=STEPN.map(function(t,i){return '<span class="'+(i+1===n?'on':i+1<n?'done':'')+'">'+t+'</span>'}).join('');
+ if(n===2)renderP2();if(n===3)renderP3();if(n===4)renderP4();if(n===5)renderP5();
+ updateBar();window.scrollTo(0,0)}
+function updateBar(){var f=$('fbar');var t=S.cart.reduce(function(a,c){return a+c.amount},0);
+ f.classList.toggle('show',S.step===1&&S.cart.length>0);
+ $('fsum').innerHTML='담은 항목 <b>'+S.cart.length+'개</b> · 합계 <b>'+won(t)+'</b> (VAT 포함)'}
+
+/* ───────── 1. 학교 · 구매 유형 ───────── */
+function initP1(){$('region').innerHTML='<option value="">선택</option>'+REGIONS.map(function(r){return '<option>'+r+'</option>'}).join('');renderAgree()}
+function renderAgree(){$('agree').innerHTML=S.region==='울산'?'울산광역시교육청 협약가(토도한글·토도수학)가 견적에 자동으로 적용됩니다.':'지역·기관 유형에 따라 협약가가 있으면 견적에 자동으로 적용됩니다.'}
+function onRegion(){S.region=$('region').value;$('schoolErr').textContent='';onSchoolInput();renderAgree();refreshSections()}
+function onSchoolInput(){var q=$('school').value.trim();S.school=q;$('schoolErr').textContent='';
+ var l=SCHOOLS.filter(function(s){return(!S.region||s[0]===S.region)&&q&&s[1].indexOf(q)>-1}).slice(0,8);
+ var d=$('dd');d.innerHTML=l.map(function(s,i){return '<div onmousedown="pickSchool('+SCHOOLS.indexOf(s)+')">'+esc(s[1])+'<small>'+s[0]+'</small></div>'}).join('');
+ d.classList.toggle('open',l.length>0);refreshSections()}
+function pickSchool(i){var s=SCHOOLS[i];S.region=s[0];S.school=s[1];$('region').value=s[0];$('school').value=s[1];$('dd').classList.remove('open');renderAgree();refreshSections()}
+document.addEventListener('click',function(e){if(!e.target.closest('#school')&&!e.target.closest('#dd'))$('dd').classList.remove('open')});
+function setType(t){
+ if(!S.region||!S.school){$('schoolErr').textContent='지역과 학교/기관명을 먼저 입력해 주세요.';window.scrollTo(0,0);return}
+ S.type=t;refreshSections()}
+function refreshSections(){
+ $('tNew').classList.toggle('on',S.type==='new');$('tEx').classList.toggle('on',S.type==='exist');
+ $('secNew').style.display=S.type==='new'?'block':'none';$('secEx').style.display=S.type==='exist'?'block':'none';
+ if(S.type==='new')renderNew();if(S.type==='exist')renderEx();updateBar()}
+
+/* ───────── 2-A. 신규 구매 : 견적 계산기 + 학급 정보 (camp 견적 계산기 방식) ───────── */
+var PCOLOR=['#5ab86a','#4a90d9','#e8729a'];
+function koDate(iso){var d=parse(iso);return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일'}
+function endCalc(start,months){var a=start.split('-').map(Number);var last=new Date(a[0],a[1]-1+months+1,0).getDate();return iso(new Date(a[0],a[1]-1+months,Math.min(a[2],last)))}
+function clsDate(v){return v==='undecided'?'미정':v?dot(v):''}
+function upLabel(pi){var p=PRODUCTS[pi];if(S.region==='울산'&&p.base!==p.ulsan)return '<s>월 '+p.base.toLocaleString()+'원/명</s><b>월 '+p.ulsan.toLocaleString()+'원/명</b><span class="dc">협약가</span>';return '월 '+p.base.toLocaleString()+'원/명'}
+function renderNew(){
+ $('secNew').innerHTML='<div class="card calc"><h2>견적 계산기</h2>'+
+ '<div class="period-section"><div class="period-label">시작일과 기간을 입력하고 필요한 기간을 확인해 보세요.</div><div class="period-row">'+
+ '<div class="date-group"><span class="date-group-label">시작일</span><div class="date-input-wrap"><input type="text" class="date-input" id="nStart" placeholder="연 / 월 / 일" readonly onclick="openStartCal(this,event)"></div></div>'+
+ '<div class="date-group"><span class="date-group-label">이용 기간</span><input type="number" id="nMonths" min="1" placeholder="0" style="width:64px;text-align:center" oninput="nwPeriod(this.value)"><span style="font-size:13px;color:#666">개월</span></div></div>'+
+ '<div class="period-end" id="nEndBox" style="display:none"><span style="color:#999">→</span><span>종료일 :</span><strong id="nEnd"></strong></div></div>'+
+ '<div class="tblw"><table><thead><tr><th style="width:30%">제품</th><th class="c" style="width:20%">이용 개월 수</th><th class="c" style="width:20%">학생 수</th><th class="n" style="width:22%">총액</th><th style="width:8%"></th></tr></thead><tbody id="nRows"></tbody>'+
+ '<tfoot><tr class="divider"><td colspan="3" style="font-size:15px;font-weight:500">합계</td><td class="n"><span class="gtotal" id="nGrand">0원</span></td><td></td></tr></tfoot></table></div>'+
+ '<button class="add-dash" onclick="nwAddRow()">+ 제품 추가</button>'+
+ '<hr style="border:none;border-top:1px solid #e0e0e0;margin:12px 0 4px">'+
+ '<h2 style="font-size:16px">학급 정보 입력</h2><p class="sub" style="font-size:13px;margin-top:-6px">아래의 정보를 입력해 주시면 보다 빠른 계정 발급이 가능합니다. 구매 수량에 맞게 인원 수를 입력해 주세요.</p>'+
+ '<div id="nCls"></div><div class="vmsg" id="nMsg"></div>'+
+ '<button class="btn o wide" onclick="nwCommit()">견적에 담기</button></div>';
+ renderRows();renderClassTable();updateNew()}
+function renderRows(){var f=S.nw;$('nRows').innerHTML=f.rows.map(function(r,ri){return '<tr><td><select class="ps" onchange="nwPi('+ri+',+this.value)">'+PRODUCTS.map(function(p,i){return '<option value="'+i+'"'+(i===r.pi?' selected':'')+'>'+p.name+'</option>'}).join('')+'</select><div class="up" id="nUp'+ri+'">'+upLabel(r.pi)+'</div></td>'+
+  '<td class="c"><input type="number" class="mini" id="nM'+ri+'" min="1" value="'+(r.months||'')+'" oninput="nwM('+ri+',this.value)"></td>'+
+  '<td class="c"><input type="number" class="mini" min="0" value="'+r.students+'" oninput="nwS('+ri+',this.value)"></td>'+
+  '<td class="n" id="nTot'+ri+'">0원</td><td class="c"><button class="rm" onclick="nwDel('+ri+')">삭제</button></td></tr>'}).join('')}
+function nwAddRow(){S.nw.rows.push({pi:0,months:1,students:1});renderRows();renderClassTable();updateNew()}
+function nwDel(ri){S.nw.rows.splice(ri,1);renderRows();renderClassTable();updateNew()}
+function nwPi(ri,v){S.nw.rows[ri].pi=v;$('nUp'+ri).innerHTML=upLabel(v);renderClassTable();updateNew()}
+function nwM(ri,v){S.nw.rows[ri].months=parseInt(v)||0;renderClassTable();updateNew()}
+function nwS(ri,v){S.nw.rows[ri].students=Math.max(0,parseInt(v)||0);updateNew();var b=$('nStat');if(b)b.innerHTML=statusHtml(cols())}
+function nwPeriod(v){S.nw.months=parseInt(v)||0;updateNew()}
+function cols(){var seen={},out=[],pm={};S.nw.rows.forEach(function(r){if(r.months>0){var k=r.pi+'_'+r.months;if(!seen[k]){seen[k]={pi:r.pi,months:r.months,key:k,purchased:0};out.push(seen[k]);(pm[r.pi]=pm[r.pi]||{})[r.months]=1}seen[k].purchased+=r.students}});
+ out.sort(function(a,b){return a.pi!==b.pi?a.pi-b.pi:a.months-b.months});out.forEach(function(c){c.show=Object.keys(pm[c.pi]).length>1});return out}
+function colLabel(c){return c.show?PRODUCTS[c.pi].short+' '+c.months+'개월':PRODUCTS[c.pi].short}
+function statusHtml(cs){return cs.map(function(c){var as=S.nw.classes.reduce(function(a,x){return a+(x.counts[c.key]||0)},0);return '<div class="sti"><span class="thb" style="background:'+PCOLOR[c.pi]+'">'+colLabel(c)+'</span><b>'+as+'/'+c.purchased+'명</b></div>'}).join('')}
+function renderClassTable(){var cs=cols(),f=S.nw;
+ if(!cs.length){$('nCls').innerHTML='<div class="sub" style="text-align:center;padding:24px">위에서 제품을 추가하면 학급 배정 테이블이 표시됩니다.</div>';return}
+ var h='<div class="cw"><div class="tblw"><table class="ct"><thead><tr><th style="min-width:100px">학급명</th><th style="min-width:120px">사용 시작일</th>'+cs.map(function(c){return '<th><span class="thb" style="background:'+PCOLOR[c.pi]+'">'+colLabel(c)+'</span></th>'}).join('')+'<th></th></tr></thead><tbody>';
+ f.classes.forEach(function(c,ci){h+='<tr><td><input type="text" placeholder="예: '+(ci+1)+'학년 1반" value="'+esc(c.name)+'" oninput="S.nw.classes['+ci+'].name=this.value"></td>'+
+  '<td><div class="date-input-wrap"><input type="text" class="cd" placeholder="연/월/일" readonly value="'+clsDate(c.start)+'" onclick="openClassCal(this,'+ci+',event)"></div></td>'+
+  cs.map(function(k){return '<td><input type="number" min="0" placeholder="0" value="'+(c.counts[k.key]||'')+'" oninput="nwCount(this,'+ci+',\''+k.key+'\')"> <span class="sub">명</span></td>'}).join('')+
+  '<td><button class="rm" onclick="nwDelClass('+ci+')">삭제</button></td></tr>'});
+ h+='</tbody></table></div><div class="conflict" id="nConflict">한 학급에 이용 기간이 다른 프로필을 배치할 수 없습니다. 다른 학급에 배정해 주세요.</div><div class="stbar" id="nStat">'+statusHtml(cs)+'</div><div class="cfoot"><button class="addc" onclick="nwAddClass()">+ 학급 추가</button></div></div>';
+ $('nCls').innerHTML=h}
+function nwAddClass(){S.nw.classes.push({id:++S.nw.cid,name:'',start:null,counts:{}});renderClassTable()}
+function nwDelClass(ci){if(S.nw.classes.length<=1)return;S.nw.classes.splice(ci,1);renderClassTable()}
+function nwCount(el,ci,key){var cs=cols(),c=S.nw.classes[ci],col=cs.filter(function(x){return x.key===key})[0];if(!col)return;var v=parseInt(el.value)||0;var cf=$('nConflict');
+ if(v>0&&cs.some(function(o){return o.pi===col.pi&&o.months!==col.months&&(c.counts[o.key]||0)>0})){el.value='';c.counts[key]=0;cf.classList.add('show');setTimeout(function(){cf.classList.remove('show')},4000);$('nStat').innerHTML=statusHtml(cs);return}
+ var others=S.nw.classes.reduce(function(a,x,i){return a+(i===ci?0:(x.counts[key]||0))},0);var max=Math.max(0,col.purchased-others);if(v>max){el.value=max;v=max}
+ c.counts[key]=v;cf.classList.remove('show');$('nStat').innerHTML=statusHtml(cs)}
+function updateNew(){var f=S.nw;if(!$('nGrand'))return;var g=0,seen={};
+ f.rows.forEach(function(r,ri){var t=price(r.pi)*r.months*r.students;g+=t;$('nTot'+ri).textContent=won(t);var k=r.pi+'_'+r.months;seen[k]=(seen[k]||0)+1});
+ f.rows.forEach(function(r,ri){var el=$('nM'+ri);var d=seen[r.pi+'_'+r.months]>1;el.style.color=d?'#d14':'';el.style.borderColor=d?'#d14':''});
+ $('nGrand').textContent=won(g);
+ if(f.start&&f.months>0){$('nEnd').textContent=koDate(endCalc(f.start,f.months));$('nEndBox').style.display='flex'}else $('nEndBox').style.display='none'}
+/* 달력 */
+function closeCals(){document.querySelectorAll('.calendar-popup').forEach(function(e){e.remove()})}
+document.addEventListener('click',closeCals);
+function openCal(input,cur,pick,extras){closeCals();var pop=document.createElement('div');pop.className='calendar-popup';pop.onclick=function(e){e.stopPropagation()};document.body.appendChild(pop);
+ var b=/^\d{4}-/.test(cur||'')?parse(cur):today(),vy=b.getFullYear(),vm=b.getMonth();
+ function draw(){var first=new Date(vy,vm,1).getDay(),days=new Date(vy,vm+1,0).getDate(),t=today();
+  var h='<div class="cal-h"><button class="cal-nav" data-nav="-1">&lsaquo;</button><span>'+vy+'년 '+(vm+1)+'월</span><button class="cal-nav" data-nav="1">&rsaquo;</button></div><div class="cal-w"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div class="cal-d">';
+  for(var i=0;i<first;i++)h+='<div class="cal-day emp"></div>';
+  for(var d=1;d<=days;d++){var dt=new Date(vy,vm,d),k=iso(dt),c='cal-day';if(dt<t)c+=' dis';if(+dt===+t)c+=' today';if(k===cur)c+=' sel';h+='<div class="'+c+'" data-d="'+k+'">'+d+'</div>'}
+  h+='</div>';if(extras)h+='<div class="cal-x">'+extras(cur)+'</div>';pop.innerHTML=h}
+ pop.addEventListener('click',function(e){var n=e.target.closest('[data-nav]'),d=e.target.closest('[data-d]'),x=e.target.closest('[data-x]');
+  if(n){vm+=+n.dataset.nav;if(vm<0){vm=11;vy--}if(vm>11){vm=0;vy++}draw()}
+  else if(d&&!d.classList.contains('dis')){pick(d.dataset.d);closeCals()}
+  else if(x){pick(x.dataset.x);closeCals()}});
+ draw();
+ var r=input.getBoundingClientRect(),h=pop.offsetHeight,w=pop.offsetWidth;
+ var top=r.bottom+4;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-4);
+ pop.style.top=top+'px';pop.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px'}
+window.addEventListener('scroll',closeCals,true);window.addEventListener('resize',closeCals);
+function openStartCal(input,e){e.stopPropagation();openCal(input,S.nw.start,function(v){S.nw.start=v;input.value=koDate(v);updateNew()})}
+function openClassCal(input,ci,e){e.stopPropagation();openCal(input,S.nw.classes[ci].start,function(v){S.nw.classes[ci].start=v;input.value=clsDate(v)},function(cur){
+ return '<button data-x="undecided" class="'+(cur==='undecided'?'on':'')+'">미정</button>'})}
+function nwCommit(){var f=S.nw,cs=cols(),msg='';var tot=f.rows.reduce(function(a,r){return a+r.students},0);
+ if(!tot)msg='제품과 학생 수를 입력해 주세요.';
+ else if(f.rows.some(function(r){return r.students>0&&!(r.months>0)}))msg='이용 개월 수를 입력해 주세요.';
+ else if(cs.some(function(c){return f.classes.reduce(function(a,x){return a+(x.counts[c.key]||0)},0)!==c.purchased}))msg='모든 학생을 학급에 배정해 주세요.';
+ else if(f.classes.some(function(c){return !c.name.trim()||!c.start}))msg='학급명과 사용 시작일을 입력해 주세요.';
+ else{var nm=f.classes.map(function(c){return c.name.trim()});if(nm.some(function(n,i){return nm.indexOf(n)!==i}))msg='학급명이 중복되었어요.'}
+ var m=$('nMsg');m.textContent=msg;m.classList.toggle('show',!!msg);if(msg){m.scrollIntoView({block:'center',behavior:'smooth'});return}
+ var n=0;f.classes.forEach(function(c){cs.forEach(function(k){var cnt=c.counts[k.key]||0;if(cnt>0)
+  S.cart.push({id:'new'+Date.now()+'_'+n++,kind:'new',cls:c.name.trim(),pi:k.pi,months:k.months,students:cnt,from:0,start:c.start,end:/^\d{4}-/.test(c.start)?endCalc(c.start,k.months):null,amount:price(k.pi)*k.months*cnt,excl:[]})})});
+ S.nw=newForm();renderNew();updateBar();toast('견적에 담았어요. 아래 버튼으로 견적 내역을 확인하세요.')}
+
+/* ───────── 2-B. 기존 학급 : 기관 코드 조회 → 학급 → 과목 ───────── */
+function renderEx(){var o=S.org;
+ var h='<div class="card"><h2>이용 중인 학급 조회</h2><div class="fg"><label>기관 코드</label>'+
+ '<div class="row"><input type="text" id="orgCode" class="grow" style="flex:1" placeholder="예: GP1234" value="'+esc(S.orgCode)+'" onkeydown="if(event.key===\'Enter\')lookup()"><button class="btn o" onclick="lookup()">조회</button></div>'+
+ '<span class="sub">기관 코드는 LMS 로그인 화면 또는 계정 안내 메일에서 확인할 수 있어요. (테스트용 코드: GP1234, UL5678)</span>'+
+ (S.orgErr?'<span class="err">'+esc(S.orgErr)+'</span>':'')+'</div>';
+ if(o){h+='<div class="fg"><label>학급 선택 · '+esc(o.name)+'</label><div class="chips">'+o.classes.map(function(c){
+  var has=S.cart.some(function(x){return x.code===S.orgCode&&x.cid===c.id});
+  return '<button class="chip'+(S.cls===c.id?' on':'')+'" onclick="pickClass(\''+c.id+'\')">'+esc(c.name)+(has?' ✓':'')+'</button>'}).join('')+'</div></div>'}
+ h+='</div>';
+ if(o&&S.cls){var c=o.classes.filter(function(x){return x.id===S.cls})[0];h+='<div class="card"><h2>'+esc(c.name)+' 이용 현황</h2>'+[0,1,2].map(function(i){return subjHtml(c,i)}).join('')+'</div>'}
+ $('secEx').innerHTML=h}
+function lookup(){var code=$('orgCode').value.trim().toUpperCase();S.orgCode=code;S.open=null;S.draft=null;S.cls=null;
+ if(ORGS[code]){S.org=ORGS[code];S.orgErr=''}else{S.org=null;S.orgErr='조회되지 않는 기관 코드예요. 다시 확인해 주세요.'}renderEx()}
+function pickClass(id){S.cls=id;S.open=null;S.draft=null;renderEx()}
+function cartFor(cid,pi,kind){return S.cart.filter(function(x){return x.code===S.orgCode&&x.cid===cid&&x.pi===pi&&(!kind||x.kind===kind)})}
+function curCls(){return S.org.classes.filter(function(x){return x.id===S.cls})[0]}
+function subjHtml(c,i){var d=c.subj[i];var key=c.id+'_'+i;var isOpen=S.open===i;
+ if(!d){return '<div class="subj off'+(isOpen?' on':'')+'"><div class="row">'+badge(i)+'<div class="kv grow"><span style="color:#aaa">이용 중이 아닙니다</span></div>'+
+  cartFor(c.id,i).map(tagOf).join('')+'<button class="btn s'+(isOpen?'':' o')+'" onclick="openSubj('+i+',\'addsubj\')">'+(isOpen?'닫기':'신규 추가')+'</button></div>'+(isOpen?panelHtml(c,i):'')+'</div>'}
+ var rem=remMonths(d.e);
+ return '<div class="subj'+(isOpen?' on':'')+'"><div class="row">'+badge(i)+'<div class="kv grow"><span>사용 인원 <b>'+d.n+'명</b></span><span>이용 기간 <b>'+dot(d.s)+' – '+dot(d.e)+'</b></span><span>'+(rem>0?'남은 기간 <b>'+rem+'개월</b>':'<b style="color:#d14">이용 기간 종료</b>')+'</span></div>'+
+  cartFor(c.id,i).map(tagOf).join('')+'<button class="btn s'+(isOpen?'':' o')+'" onclick="openSubj('+i+',\'extend\')">'+(isOpen?'닫기':'선택')+'</button></div>'+(isOpen?panelHtml(c,i):'')+'</div>'}
+function tagOf(x){return '<span class="tg o">'+({extend:'기간 연장',add:'학생 추가',addsubj:'신규 추가'})[x.kind]+' 담김</span>'}
+function openSubj(i,mode){if(S.open===i){S.open=null;S.draft=null;renderEx();return}S.open=i;setDraft(mode);renderEx()}
+function setDraft(mode){var c=curCls(),i=S.open,d=c.subj[i];S.draft={mode:mode};var ex=cartFor(c.id,i,mode)[0];
+ if(mode==='extend'){S.draft.months=ex?ex.months:12;S.draft.students=ex?ex.students:d.n;S.draft.excl=ex?ex.excl.slice():[]}
+ else if(mode==='add'){S.draft.students=ex?ex.students:1}
+ else{S.draft.months=ex?ex.months:12;S.draft.students=ex?ex.students:1;S.draft.start=ex?ex.start:iso(today())}}
+function setMode(m){setDraft(m);renderEx()}
+function panelHtml(c,i){var d=c.subj[i],D=S.draft,h='';
+ if(d){h+='<div class="seg"><button class="'+(D.mode==='extend'?'on':'')+'" onclick="setMode(\'extend\')">기간 연장</button><button class="'+(D.mode==='add'?'on':'')+'" onclick="setMode(\'add\')">학생 추가</button></div>'}
+ if(D.mode==='extend')h+=extendPanel(c,i,d);else if(D.mode==='add')h+=addPanel(c,i,d);else h+=addSubjPanel(c,i);
+ return '<div id="panel" style="display:flex;flex-direction:column;gap:11px">'+h+'</div>'}
+function stepper(fn,v,min,max){return '<div class="step"><button onclick="'+fn+'(-1)">−</button><input type="number" min="'+min+'" max="'+max+'" value="'+v+'" onchange="'+fn+'(0,this.value)"><button onclick="'+fn+'(1)">+</button></div>'}
+function mSelect(v,fn){var o='';for(var k=1;k<=12;k++)o+='<option value="'+k+'"'+(k===v?' selected':'')+'>'+k+'개월</option>';return '<select style="width:130px" onchange="'+fn+'(+this.value)">'+o+'</select>'}
+function extStart(d){var a=dayAfter(d.e);var t=iso(today());return a>t?a:t} // 이미 종료된 경우 오늘부터
+function extendPanel(c,i,d){var D=S.draft,st=extStart(d),en=endOf(st,D.months),red=Math.max(0,d.n-D.students);
+ var h='<div class="row" style="align-items:flex-end;gap:14px"><div class="fg"><label>연장 기간</label>'+mSelect(D.months,'dMonths')+'</div>'+
+ '<div class="fg"><label>연장할 학생 수</label><div class="row" style="gap:8px">'+stepper('dStu',D.students,1,999)+'<span class="sub">현재 '+d.n+'명</span></div></div>'+
+ '<div class="info grow" style="padding:8px 14px;min-width:180px">연장 시작 <b>'+dot(st)+'</b><br>예상 종료일 <b style="color:#e0911a;font-size:15px">'+dot(en)+'</b></div></div>';
+ if(red>0){h+='<div class="warn"><b>학생 수를 '+d.n+'명 → '+D.students+'명으로 줄여 연장합니다.</b><br>연장하지 않는 학생 '+red+'명은 현재 종료일('+dot(d.e)+') 이후 이용이 중지되고 학습 기록은 보관됩니다. 제외할 학생 이름을 입력해 주세요.</div><div class="row">';
+  for(var k=0;k<red;k++)h+='<div class="fg grow" style="min-width:140px"><label>제외할 학생 '+(k+1)+'</label><input type="text" placeholder="학생 이름" value="'+esc(D.excl[k]||'')+'" oninput="dExcl('+k+',this.value)"></div>';h+='</div>'}
+ if(D.students>d.n)h+='<div class="info">추가된 인원 '+(D.students-d.n)+'명은 연장 시작일('+dot(st)+')부터 이용합니다. 지금 바로 쓰려면 <b>학생 추가</b>를 함께 선택해 주세요.</div>';
+ h+='<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+D.months+'개월 = <b style="color:#333">'+(D.students*D.months)+'</b> · <b style="color:#333">'+won(price(i)*D.students*D.months)+'</b></span><button class="btn o" id="dGo" onclick="dCommit()"'+(red>0&&!exclOk(red)?' disabled':'')+'>견적에 담기</button></div>';return h}
+function exclOk(red){var D=S.draft;for(var k=0;k<red;k++)if(!(D.excl[k]||'').trim())return false;return true}
+function addPanel(c,i,d){var D=S.draft,rem=remMonths(d.e);
+ if(rem<=0)return '<div class="warn">이용 기간이 끝난 과목은 학생 추가를 할 수 없어요. <b>기간 연장</b>을 선택해 주세요.</div>';
+ return '<div class="row" style="align-items:flex-start;gap:16px"><div class="fg"><label>추가할 학생 수</label><div class="row" style="gap:8px">'+stepper('dStu',D.students,1,999)+'<span class="sub">'+d.n+'명 → '+(d.n+D.students)+'명</span></div></div>'+
+ '<div class="fg grow" style="min-width:220px"><label>이용 기간</label><div class="lock">현재 종료일까지 · '+dot(d.e)+' ('+rem+'개월) 🔒</div></div></div>'+
+ '<div class="info">같은 학급은 이용권 하나로 관리되어, 추가하는 학생의 종료일은 기존 학생과 같게 맞춰집니다. 더 오래 이용하려면 <b>기간 연장</b>을 함께 선택해 주세요.</div>'+
+ '<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+rem+'개월 = <b style="color:#333">'+(D.students*rem)+'</b> · <b style="color:#333">'+won(price(i)*D.students*rem)+'</b></span><button class="btn o" onclick="dCommit()">견적에 담기</button></div>'}
+function addSubjPanel(c,i){var D=S.draft,en=endOf(D.start,D.months);
+ return '<div class="row" style="align-items:flex-end;gap:14px"><div class="fg"><label>시작일</label><input type="date" style="width:160px" value="'+D.start+'" onchange="dStart(this.value)"></div>'+
+ '<div class="fg"><label>이용 기간</label>'+mSelect(D.months,'dMonths')+'</div>'+
+ '<div class="fg"><label>학생 수</label>'+stepper('dStu',D.students,1,999)+'</div>'+
+ '<div class="info grow" style="padding:8px 14px;min-width:160px">예상 종료일 <b style="color:#e0911a;font-size:15px">'+dot(en)+'</b></div></div>'+
+ '<div class="row"><span class="grow sub">'+PRODUCTS[i].name+' · '+D.students+'명 × '+D.months+'개월 = <b style="color:#333">'+(D.students*D.months)+'</b> · <b style="color:#333">'+won(price(i)*D.students*D.months)+'</b></span><button class="btn o" onclick="dCommit()">견적에 담기</button></div>'}
+function dMonths(v){S.draft.months=v;renderEx()}
+function dStart(v){if(v){S.draft.start=v;renderEx()}}
+function dStu(delta,val){var D=S.draft;var v=delta?D.students+delta:parseInt(val)||1;D.students=Math.min(999,Math.max(1,v));
+ if(D.mode==='extend'){var c=curCls(),n=c.subj[S.open].n;D.excl=D.excl.slice(0,Math.max(0,n-D.students))}renderEx()}
+function dExcl(k,v){S.draft.excl[k]=v;var c=curCls(),red=Math.max(0,c.subj[S.open].n-S.draft.students);var b=$('dGo');if(b)b.disabled=!exclOk(red)}
+function dCommit(){var c=curCls(),i=S.open,d=c.subj[i],D=S.draft,it;
+ S.cart=S.cart.filter(function(x){return!(x.code===S.orgCode&&x.cid===c.id&&x.pi===i&&x.kind===D.mode)});
+ var base={id:'ex'+Date.now()+'_'+i,code:S.orgCode,cid:c.id,cls:c.name,pi:i,kind:D.mode,excl:[]};
+ if(D.mode==='extend'){var st=extStart(d),red=Math.max(0,d.n-D.students);
+  it={months:D.months,students:D.students,from:d.n,start:st,end:endOf(st,D.months),excl:D.excl.slice(0,red).map(function(s){return s.trim()})}}
+ else if(D.mode==='add'){var rem=remMonths(d.e);it={months:rem,students:D.students,from:d.n,start:iso(today())>d.s?iso(today()):d.s,end:d.e}}
+ else it={months:D.months,students:D.students,from:0,start:D.start,end:endOf(D.start,D.months)};
+ for(var k in it)base[k]=it[k];base.amount=price(i)*base.months*base.students;S.cart.push(base);
+ S.open=null;S.draft=null;renderEx();updateBar();toast('견적에 담았어요. 다른 과목·학급도 이어서 담을 수 있어요.')}
+
+/* ───────── 3. 견적 내역 · 학급 정보 자동 입력 ───────── */
+var KIND={new:'신규 구매',extend:'기간 연장',add:'학생 추가',addsubj:'신규 과목'};
+function total(){return S.cart.reduce(function(a,c){return a+c.amount},0)}
+function noteOf(x){if(x.kind==='extend'&&x.from!==x.students)return x.from+' → '+x.students+'명';return ''}
+function lines(items){var g={},out=[];(items||S.cart).forEach(function(x){var k=x.pi+'|'+x.kind+'|'+x.months;if(!g[k]){g[k]={key:k,pi:x.pi,kind:x.kind,months:x.months,students:0,amount:0};out.push(g[k])}g[k].students+=x.students;g[k].amount+=x.amount});
+ out.sort(function(a,b){return a.pi!==b.pi?a.pi-b.pi:a.kind!==b.kind?(a.kind<b.kind?-1:1):a.months-b.months});return out.map(function(l){l.price=l.amount/(l.months*l.students);return l})}
+function renderP2(){var L=lines();var h='<div class="card"><h2>견적 내역</h2>';
+ if(!L.length)h+='<div class="info">담은 항목이 없어요. 이전 화면에서 항목을 담아 주세요.</div>';
+ else{h+='<div class="tblw"><table><tr><th>제품</th><th class="n">단가(월/명)</th><th class="c">개월 수</th><th class="c">학생 수</th><th class="n">금액</th><th></th></tr>'+
+  L.map(function(l){return '<tr><td>'+badge(l.pi)+(l.kind!=='new'?' <span class="tg o">'+KIND[l.kind]+'</span>':'')+'</td><td class="n">'+l.price.toLocaleString()+'원</td><td class="c">'+l.months+'</td><td class="c">'+l.students+'</td><td class="n">'+won(l.amount)+'</td><td><button class="btn s" onclick="delGroup(\''+l.key+'\')">✕</button></td></tr>'}).join('')+
+  '<tr class="total"><td colspan="4">합계 (VAT 포함)</td><td class="n">'+won(total())+'</td><td></td></tr></table></div>'}
+ h+='</div>';
+ if(S.cart.length){var order=[];S.cart.forEach(function(x){var k=(x.code||'')+'|'+x.cls;if(order.indexOf(k)<0)order.push(k)});
+ var rows=S.cart.slice().sort(function(a,b){return order.indexOf((a.code||'')+'|'+a.cls)-order.indexOf((b.code||'')+'|'+b.cls)});
+ var span={};rows.forEach(function(x){var k=(x.code||'')+'|'+x.cls;span[k]=(span[k]||0)+1});
+ h+='<div class="card"><div class="row"><h2 class="grow">학급 정보</h2><span class="tg">자동 입력</span></div><div class="sub">조회한 정보와 선택한 내용으로 채워졌어요. 학생 이름은 일부만 표시됩니다.</div><div class="tblw"><table style="table-layout:fixed;min-width:560px"><colgroup><col style="width:24%"><col style="width:14%"><col><col style="width:15%"><col style="width:19%"></colgroup><tr><th colspan="2">학급 - 과목</th><th>변경 내용</th><th class="c">적용 후 인원</th><th>적용 후 종료일</th></tr>'+
+  rows.map(function(x,i){var k=(x.code||'')+'|'+x.cls;var first=i===0||(rows[i-1].code||'')+'|'+rows[i-1].cls!==k;
+   return '<tr'+(first&&i>0?' style="border-top:2px solid #eee"':'')+'>'+(first?'<td rowspan="'+span[k]+'" style="font-weight:700;font-size:14px;vertical-align:middle;white-space:normal;border-bottom:1px solid #f0f0f0">'+esc(x.cls)+'</td>':'')+
+   '<td>'+badge(x.pi).replace('>'+PRODUCTS[x.pi].name+'<','>'+PRODUCTS[x.pi].short+'<')+'</td><td style="white-space:normal">'+changeText(x)+'</td><td class="c">'+(x.kind==='add'?x.from+x.students:x.students)+'명</td><td>'+endTxt(x)+'</td></tr>'}).join('')+'</table></div></div>'}
+ h+='<div class="row" style="justify-content:space-between"><button class="btn" onclick="go(1)">← 이전</button><button class="btn o" '+(S.cart.length?'':'disabled')+' onclick="go(3)">다음: 구매 방법 안내 →</button></div>';
+ $('p2').innerHTML=h}
+function endTxt(x){return x.end?dot(x.end):'미정'}
+function changeText(x){if(x.kind==='new'||x.kind==='addsubj')return '신규 '+x.months+'개월';if(x.kind==='add')return '학생 '+x.students+'명 추가';
+ var t='기간 연장 '+x.months+'개월';if(x.excl&&x.excl.length)t+=' · '+esc(mask(x.excl[0]))+(x.excl.length>1?' 외 '+(x.excl.length-1)+'명':'')+' 제외';return t}
+function delGroup(k){S.cart=S.cart.filter(function(x){return(x.pi+'|'+x.kind+'|'+x.months)!==k});renderP2();updateBar()}
+
+/* ───────── 4. 구매 방법 안내 · 선택 ───────── */
+var GUIDE='card';
+var MALL_URL='https://i-screammall.co.kr/display/shop/minishop/1001750';
+var S2B_BASE='https://www.s2b.kr/S2BNCustomer/S2B/scrweb/remu/rema/searchengine/s2bCustomerSearch.jsp?actionType=MAIN_SEARCH&searchField=&startIndex=&viewCount=50&viewType=LIST&sortField=RANK&priceMin=0&priceMax=0&priceMinSet=0&priceMaxSet=0&categoryLevel1Code=&categoryLevel2Code=&categoryLevel3Code=&categoryLevel3Name=&areaCode=&categoryWinStatus=none&companyCodeParam=&priceNewSet=true&publicPurchaseCode=&f_edufine_code=&submit_yn=Y&searchQuery=';
+var S2B_END='&searchRequery=&locationGbn=all';
+var EDU_BASE='https://www.s2b.kr/Edutech/product/productDetail.do?estimatecode=';
+function s2bUrl(i){return S2B_BASE+PRODUCTS[i].code+S2B_END}
+function eduUrl(i){return EDU_BASE+PRODUCTS[i].edu}
+function qtyByProduct(){var q=[0,0,0];S.cart.forEach(function(x){q[x.pi]+=x.months*x.students});return q}
+function qtyTable(codeFn,head,q){return '<div class="tblw"><table><tr><th>제품명</th><th>'+head+'</th><th class="n">이번 견적 입력 수량</th></tr>'+
+ PRODUCTS.map(function(p,i){return '<tr><td>'+p.name+'</td><td>'+codeFn(i)+'</td><td class="n">'+(q[i]?'<b>'+q[i]+'</b>':'<span style="color:#bbb">-</span>')+'</td></tr>'}).join('')+'</table></div>'}
+function renderP3(){var q=qtyByProduct();
+ var G={mall:['아이스크림몰','제품명을 검색해 구매합니다.'],card:['카드 결제','견적서와 함께 카드 결제 링크가 발송됩니다.'],s2b:['학교장터','물품번호로 검색해 구매합니다.'],edu:['에듀테크몰','물품번호로 검색해 구매합니다.']};
+ var h='<div class="card"><h2>구매 방법 안내</h2><p class="sub" style="font-size:13px">아래 정보는 견적 안내 메일에서도 확인하실 수 있습니다.</p><div class="pm">'+['mall','card','s2b','edu'].map(function(k){return '<button class="'+(GUIDE===k?'on':'')+'" onclick="GUIDE=\''+k+'\';renderP3()"><b>'+G[k][0]+'</b>'+G[k][1]+'</button>'}).join('')+'</div>';
+ if(GUIDE==='s2b')h+='<div class="info"><b>학교장터(S2B)</b> · 아래 물품번호를 누르시면 과목별 학교장터 페이지로 이동합니다. 수량에는 <b>[이용 개월 수 × 인원 수]</b>를 입력해 주세요.</div>'+qtyTable(function(i){return codeLink(s2bUrl(i),PRODUCTS[i].code)},'물품번호 (누르면 이동)',q);
+ else if(GUIDE==='edu')h+='<div class="info"><b>에듀테크몰</b> · 아래 물품번호를 누르시면 과목별 에듀테크몰 페이지로 이동합니다. 수량에는 <b>[이용 개월 수 × 인원 수]</b>를 입력해 주세요.</div>'+qtyTable(eduLink,'물품번호 (누르면 이동)',q);
+ else if(GUIDE==='mall')h+='<div class="info">제품명을 검색해 구매합니다.<br><a href="'+MALL_URL+'" target="_blank" rel="noopener" class="btn o s" style="display:inline-block;margin-top:8px;text-decoration:none">아이스크림몰 바로가기 ↗</a></div>';
+ else h+='<div class="info">견적서와 함께 카드 결제 링크가 발송됩니다.</div>';
+ h+='</div><div class="card"><h2>구매 방법이 정해지셨다면 선택해 주세요</h2><div class="row" style="align-items:stretch">'+
+ ['카드 결제','학교장터','아이스크림몰','미정'].map(function(o){
+  return '<button class="choice'+(S.purchase===o?' on':'')+'" style="min-width:120px;justify-content:center" onclick="S.purchase=\''+o+'\';renderP3()"><b><span class="rad"></span>'+o+'</b></button>'}).join('')+'</div></div>'+
+ '<div class="row" style="justify-content:space-between"><button class="btn" onclick="go(2)">← 이전</button><button class="btn o" onclick="go(4)">다음: 견적서 발급 →</button></div>';
+ $('p3').innerHTML=h}
+function codeLink(url,code){return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#333">'+code+'</a>'}
+function eduLink(i){return codeLink(eduUrl(i),PRODUCTS[i].edu)}
+
+/* ───────── 5. 견적서 발급 (연락처 + 동의) ───────── */
+var F={name:'',email:'',phone:'',purpose:'',agree:false,mk:false};
+function renderP4(){var h='<div class="card"><h2>견적서 발급</h2><p class="sub">견적서를 받아보실 연락처를 입력해 주세요.</p>'+
+ '<div class="fg"><label>이름</label><input type="text" id="fName" placeholder="홍길동" value="'+esc(F.name)+'" oninput="F.name=this.value"></div>'+
+ '<div class="fg"><label>이메일</label><input type="email" id="fEmail" placeholder="example@school.ac.kr" value="'+esc(F.email)+'" oninput="F.email=this.value"></div>'+
+ '<div class="row" style="align-items:flex-start"><div class="fg grow" style="min-width:200px"><label>구매 목적</label><input type="text" id="fPurpose" placeholder="ex) 기초학력, 특수, 다문화 .." value="'+esc(F.purpose)+'" oninput="F.purpose=this.value"></div>'+
+ '<div class="fg grow" style="min-width:200px"><label>휴대폰</label><input type="tel" id="fPhone" placeholder="010-0000-0000" value="'+esc(F.phone)+'" oninput="F.phone=this.value"></div></div>'+
+ '<label class="consent"><input type="checkbox" '+(F.agree?'checked':'')+' onchange="F.agree=this.checked"><span><b>[필수]</b> 견적 안내를 위한 개인정보 수집·이용에 동의해요. <u onclick="tgl(event,\'cd1\')">내용 보기</u></span></label>'+
+ '<div class="cdetail" id="cd1">[개인정보 수집·이용 동의]<br>1. 수집 항목: 지역, 학교/기관명, 이름, 이메일, 휴대폰 번호, 구매 목적(선택)<br>2. 수집·이용 목적: 견적서 발송 및 구매 진행 안내<br>3. 보유·이용 기간: 수집일로부터 1년 (목적 달성 시 지체 없이 파기)<br>4. 동의를 거부하실 수 있으며, 거부 시 견적서 발급이 제한됩니다.</div>'+
+ '<label class="consent"><input type="checkbox" '+(F.mk?'checked':'')+' onchange="F.mk=this.checked"><span><b>[선택]</b> 새 학기 수업 자료 · 연수 소식을 문자로 받을게요. <u onclick="tgl(event,\'cd2\')">내용 보기</u></span></label>'+
+ '<div class="cdetail" id="cd2">[마케팅 정보 수신 동의 (선택)]<br>1. 수신 항목: 휴대폰 번호<br>2. 목적: 새 학기 수업 자료, 연수 소식 등 안내 문자 발송<br>3. 보유·이용 기간: 동의 철회 시까지<br>4. 동의하지 않아도 견적서 발급에는 영향이 없으며, 언제든 수신을 거부할 수 있습니다.</div>'+
+ '<div class="err" id="fErr"></div>'+
+ '<button class="btn o wide" id="fSubmit" onclick="issue()">견적서 발급하기</button></div>'+
+ '<div class="row"><button class="btn" onclick="go(3)">← 이전</button></div>';
+ $('p4').innerHTML=h}
+function tgl(e,id){e.preventDefault();e.stopPropagation();$(id).classList.toggle('open')}
+function issue(){var e='';var n=F.name.trim(),m=F.email.trim(),p=F.phone.trim();
+ if(!n)e='이름을 입력해 주세요.';else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m))e='올바른 이메일 주소를 입력해 주세요.';
+ else if(!/^01[016789]-?\d{3,4}-?\d{4}$/.test(p))e='휴대폰 번호를 010-0000-0000 형식으로 입력해 주세요.';
+ else if(!F.agree)e='[필수] 개인정보 수집·이용에 동의해 주세요.';
+ $('fErr').textContent=e;if(e)return;
+ var b=$('fSubmit');b.disabled=true;b.textContent='견적서를 발급하고 있어요...';
+ setTimeout(function(){var seq=lsGet(LS_SEQ,0)+1;lsSet(LS_SEQ,seq);var d=new Date();
+  var q={no:'Q-'+d.getFullYear()+'-'+('000'+seq).slice(-4),issuedAt:d.toISOString(),school:S.school,region:S.region,type:S.type,
+   items:JSON.parse(JSON.stringify(S.cart)),total:total(),purchase:S.purchase,
+   contact:{name:n,email:m,phone:p},purpose:F.purpose.trim(),consent:{privacy:true,marketing:F.mk,at:d.toISOString()},consult:null,
+   paymentLink:S.purchase==='카드 결제'?'https://pay.example.test/'+('000'+seq).slice(-4):null};
+  var all=lsGet(LS_Q,[]);all.push(q);lsSet(LS_Q,all);S.quote=q;go(5)},600)}
+
+/* ───────── 6. 완료 + 견적 상담 ───────── */
+var C={known:'yes',budget:'',time:BUDGET_TIMES[0],agree:false};
+function renderP5(){var q=S.quote;if(!q){go(1);return}
+ var h='<div class="card done"><div class="ck">✓</div><h2 style="font-size:19px">이메일로 견적서가 발송되었습니다</h2>'+
+ '<p style="color:#555">견적서와 함께 안내된 구매 방법을 행정실에 전달해 주시면 보다 빠른 진행이 가능합니다.</p>'+
+ '<p class="sub">견적번호 '+q.no+' · '+esc(q.contact.email)+'</p>'+
+ (q.paymentLink?'<p class="sub" style="color:#b8730a">카드 결제를 선택하셨어요. 결제 링크도 메일에 함께 보내드렸어요. (테스트 링크: '+q.paymentLink+')</p>':'')+
+ '<div class="row" style="justify-content:center"><button class="btn o" onclick="dlPdf()">견적서 PDF 다운로드</button><button class="btn" onclick="reGuide()">구매 방법 다시 보기</button></div></div>';
+ if(q.consult){h+='<div class="card done"><div class="ck">✓</div><h2>상담 신청이 접수되었어요</h2><p style="color:#555">담당자가 확인 후 연락드릴게요.</p></div>'}
+ else{h+='<div class="card"><h2>견적 상담이 필요하신가요?</h2><p class="sub">예산에 맞춘 견적이 필요하면 아래 내용을 남겨 주세요. 담당자가 연락드립니다. (연락처는 방금 입력하신 정보를 사용해요)</p>'+
+  '<div style="background:#fef6e8;border:1px solid #f0d8a0;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px"><b>남은 예산을 알고 계신가요?</b>'+
+  '<div class="row" style="align-items:stretch">'+[['yes','네, 알고 있어요'],['no','아직 모르겠어요']].map(function(o){return '<button class="choice'+(C.known===o[0]?' on':'')+'" style="min-width:140px" onclick="C.known=\''+o[0]+'\';renderP5()"><b><span class="rad"></span>'+o[1]+'</b></button>'}).join('')+'</div>'+
+  '<div class="row" style="align-items:flex-end">'+(C.known==='yes'?'<div class="fg grow" style="min-width:180px"><label>가용 예산</label><input type="text" inputmode="numeric" placeholder="예: 500,000" value="'+esc(C.budget)+'" oninput="budgetIn(this)"></div>':'')+
+  '<div class="fg grow" style="min-width:180px"><label>선호 연락 시간대</label><select onchange="C.time=this.value">'+BUDGET_TIMES.map(function(t){return '<option'+(t===C.time?' selected':'')+'>'+t+'</option>'}).join('')+'</select></div></div></div>'+
+  '<label class="consent"><input type="checkbox" '+(C.agree?'checked':'')+' onchange="C.agree=this.checked"><span><b>[필수]</b> 상담 안내를 위한 개인정보 수집·이용에 동의해요. <u onclick="tgl(event,\'cd3\')">내용 보기</u></span></label>'+
+  '<div class="cdetail" id="cd3">[개인정보 수집·이용 동의]<br>1. 수집 항목: 이름, 이메일, 휴대폰 번호(견적서 발급 시 입력), 가용 예산, 선호 연락 시간대<br>2. 목적: 견적 상담 연락<br>3. 보유·이용 기간: 상담 종료 후 1년<br>4. 동의를 거부할 수 있으며, 거부 시 상담 신청이 제한됩니다.</div>'+
+  '<div class="err" id="cErr"></div><button class="btn o wide" onclick="consult()">상담 신청하기</button></div>'}
+ h+='<div class="row" style="justify-content:space-between"><button class="btn" onclick="resetAll()">새 견적 만들기</button><span class="sub">저장된 테스트 견적 '+lsGet(LS_Q,[]).length+'건 <a href="#" style="color:#e0911a" onclick="showSaved();return false">저장 데이터 보기</a> · <a href="#" style="color:#999" onclick="clearSaved();return false">비우기</a></span></div><div id="saved"></div>';
+ $('p5').innerHTML=h}
+function budgetIn(el){var d=el.value.replace(/\D/g,'');C.budget=d?Number(d).toLocaleString('ko-KR'):'';el.value=C.budget}
+function consult(){var e='';if(C.known==='yes'&&!C.budget)e='가용 예산을 입력해 주세요.';else if(!C.agree)e='[필수] 개인정보 수집·이용에 동의해 주세요.';
+ $('cErr').textContent=e;if(e)return;
+ var all=lsGet(LS_Q,[]);all.forEach(function(x){if(x.no===S.quote.no)x.consult={budgetKnown:C.known==='yes',budget:C.known==='yes'?C.budget:null,time:C.time,agreedAt:new Date().toISOString()}});
+ lsSet(LS_Q,all);S.quote.consult=all.filter(function(x){return x.no===S.quote.no})[0].consult;renderP5();toast('상담 신청이 접수되었어요 (담당자 알림은 목업이라 발송되지 않습니다)')}
+function reGuide(){S.step=3;go(3);}
+function showSaved(){$('saved').innerHTML='<pre>'+esc(JSON.stringify(lsGet(LS_Q,[]),null,1))+'</pre>'}
+function clearSaved(){try{localStorage.removeItem(LS_Q);localStorage.removeItem(LS_SEQ)}catch(e){}renderP5();toast('저장된 테스트 데이터를 비웠어요')}
+function resetAll(){S.cart=[];S.type='';S.org=null;S.orgCode='';S.cls=null;S.open=null;S.draft=null;S.nw=newForm();S.purchase='미정';S.quote=null;
+ F={name:'',email:'',phone:'',purpose:'',agree:false,mk:false};C={known:'yes',budget:'',time:BUDGET_TIMES[0],agree:false};
+ $('school').value='';$('region').value='';S.school='';S.region='';renderAgree();go(1);refreshSections()}
+function dlPdf(){var q=S.quote,L=lines(q.items);var d=new Date(q.issuedAt);var f=function(n){return n.toLocaleString('ko-KR')};
+ var school=(q.region&&q.school.indexOf(q.region)!==0?q.region+' ':'')+q.school;
+ var T='border:1px solid #bbb;padding:7px 10px;',LB='background:#f0f0f0;font-weight:600;text-align:center;',C='text-align:center;';
+ var td='border:1px solid #bbb;padding:7px 6px;text-align:center;font-size:12px;vertical-align:middle;';
+ var th='background:#e8e8e8;border:1px solid #bbb;padding:7px 6px;text-align:center;font-size:12px;font-weight:600;';
+ var rows=L.map(function(l,i){return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'">'+PRODUCTS[l.pi].name+'</td><td style="'+td+'">'+l.months+'</td><td style="'+td+'">'+l.students+'</td><td style="'+td+'">'+f(l.price)+'</td><td style="'+td+'text-align:right;">'+f(l.amount)+'</td><td style="'+td+'text-align:left;font-size:11px;">'+(l.kind!=='new'?KIND[l.kind]:'')+'</td></tr>'}).join('');
+ rows+='<tr><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'"></td><td style="'+td+'color:#555;">이하 여백</td><td style="'+td+'"></td></tr>';
+ $('qdoc').innerHTML='<div id="qd" style="width:794px;padding:60px 60px 40px;background:#fff;font-family:\'Malgun Gothic\',\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;font-size:12px;color:#111">'+
+ '<div style="text-align:center;font-size:28px;font-weight:700;letter-spacing:12px;margin-bottom:32px">견 적 서</div>'+
+ '<table style="width:100%;border-collapse:collapse;margin-bottom:24px">'+
+ '<tr><td colspan="2" style="'+T+LB+'width:120px">견적일자</td><td style="'+T+'">'+d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.</td></tr>'+
+ '<tr><td colspan="2" style="'+T+LB+'">공급받는자</td><td style="'+T+C+'">'+esc(school)+'    귀하</td></tr>'+
+ '<tr><td style="'+T+LB+'width:30px;writing-mode:vertical-rl" rowspan="5">공급자</td><td style="'+T+LB+'width:90px">사업자 번호</td><td style="'+T+C+'">883-86-00976</td></tr>'+
+ '<tr><td style="'+T+LB+'width:90px">상호명 / 대표자</td><td style="'+T+C+'"><img alt="TODO 로고" style="float:right;height:30px;width:auto;margin-left:12px" src="todo_logo.png">주식회사 에누마코리아 / 전유택</td></tr>'+
+ '<tr><td style="'+T+LB+'width:90px">사업장 주소</td><td style="'+T+C+'">서울특별시 성동구 독섬로1나길 5, G301호</td></tr>'+
+ '<tr><td style="'+T+LB+'width:90px">업태/업종</td><td style="'+T+C+'">서비스업, 소매업 / 소프트웨어개발 및 유통</td></tr>'+
+ '<tr><td style="'+T+LB+'width:90px">문의</td><td style="'+T+C+'">todoclassroom@enuma.com / 02-462-9720</td></tr></table>'+
+ '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+th+'width:8%">번호</th><th style="'+th+'width:18%">상품명</th><th style="'+th+'width:13%">기간(개월)</th><th style="'+th+'width:13%">수량(명)</th><th style="'+th+'width:13%">단가(원)</th><th style="'+th+'width:13%">소계(원)</th><th style="'+th+'width:22%">비고</th></tr></thead><tbody>'+rows+'</tbody>'+
+ '<tfoot><tr><td colspan="6" style="background:#d9d9d9;font-weight:700;font-size:13px;border:1px solid #bbb;padding:9px 6px;text-align:center">총 합계 금액(vat 포함)</td><td style="background:#d9d9d9;font-weight:700;font-size:13px;border:1px solid #bbb;padding:9px 6px;text-align:center">'+f(q.total)+'원</td></tr></tfoot></table>'+
+ '<div style="margin-top:14px;color:#c33;font-size:10.5px;text-align:center">※ 테스트 페이지에서 생성된 견적서로 실제 효력이 없습니다</div></div>';
+ var used={};L.forEach(function(l){used[PRODUCTS[l.pi].short]=1});
+ var fn='토도'+Object.keys(used).join(',')+'_'+school+'_'+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'.pdf';
+ var el=$('qdoc');
+ if(window.html2pdf){el.style.cssText='display:block;position:absolute;left:-9999px;top:0;background:#fff';
+  html2pdf().set({margin:0,filename:fn,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,allowTaint:true},jsPDF:{unit:'px',format:[794,1123],orientation:'portrait'}}).from(el.firstChild).save().then(function(){el.style.cssText=''}).catch(function(){el.style.cssText='';toast('PDF 생성 중 오류가 발생했어요. 다시 시도해 주세요.')})}
+ else{el.style.cssText='display:block';window.print();el.style.cssText=''}}
+
+/* ───────── 시작 ───────── */
+initP1();go(1);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>
